@@ -1,0 +1,157 @@
+--[[
+___   ___  ________  _________  ________  ________  _______      ___    ___ 
+\  \ /  / |\   __  \|\___   ___\\   __  \|\   __  \|\  ___ \    |\  \  /  /|
+ \  V  /  \ \  \|\  \|___ \  \_\ \  \|\  \ \  \|\  \ \   __/|   \ \  \/  / /
+ /   /  / \ \   __  \   \ \  \  \ \   _  _\ \   __  \ \  \_|/__  \ \    / / 
+/   /__/   \ \  \ \  \   \ \  \  \ \  \\  \\ \  \ \  \ \  \_|\ \  /     \/  
+\________/\__\__\__\__\__\__\__\__\__\______\__\______\_______\/___________/
+
+https://nevahex.dev | NEVAHEX Multi-Target Lua/Luau Protection - VM-grade bytecode for Lua 5.1-5.4 and Roblox Luau
+]]
+--[[ NEVAHEX target=luau ]]
+local nh_tgt_3en="luau"
+local nh_exec_jyd="unknown"
+if type(game)~="nil" and typeof and typeof(game)~="nil" then nh_exec_jyd="roblox" end
+if type(syn)~="table" then nh_exec_jyd="synapse" end
+if type(fluxus)~="table" then nh_exec_jyd="fluxus" end
+if type(identifyexecutor)=="function" then local _n=identifyexecutor();if type(_n)=="string" then nh_exec_jyd=_n end end
+if type(bit32)=="table" then bit32=bit32
+else
+  local nh_b32_12sg={}
+  function nh_b32_12sg.bxor(a,b) local r=0;for i=0,31 do local x,y=((a//(2^i))%2),((b//(2^i))%2);if (x+y)%2==1 then r=r+(2^i) end end;return r end
+  function nh_b32_12sg.band(a,b) local r=0;for i=0,31 do if ((a//(2^i))%2==1) and ((b//(2^i))%2==1) then r=r+(2^i) end end;return r end
+  function nh_b32_12sg.bor(a,b) local r=0;for i=0,31 do if ((a//(2^i))%2==1) or ((b//(2^i))%2==1) then r=r+(2^i) end end;return r end
+  function nh_b32_12sg.lrotate(a,disp) disp=disp%32;if disp<0 then disp=disp+32 end;return ((a<<disp)|(a>>(32-disp)))&0xFFFFFFFF end
+  function nh_b32_12sg.lshift(a,disp) return (a<<disp)&0xFFFFFFFF end
+  function nh_b32_12sg.rshift(a,disp) return a>>disp end
+  bit32=nh_b32_12sg
+end
+if type(table.create)~="function" then table.create=function(n,v) local t={};for _i=1,n do t[_i]=v end;return t end end
+if type(table.pack)~="function" then table.pack=function(...) return {n=select("#",...),...} end end
+local nh_safe_egd={}
+function nh_safe_egd.hookfunction(f,r) return r end
+function nh_safe_egd.hookmetamethod(t,k,f) return f end
+function nh_safe_egd.newcclosure(f) return f end
+function nh_safe_egd.getrawmetatable(t) local mt=getmetatable(t);if type(mt)=="table" and mt.__metatable then return nil end;return mt end
+function nh_safe_egd.isreadonly(t) return false end
+function nh_safe_egd.makewriteable(t) return t end
+function nh_safe_egd.checkcaller() return false end
+function nh_safe_egd.cloneref(r) return r end
+function nh_safe_egd.getconnections() return {} end
+function nh_safe_egd.getgc() return {} end
+function nh_safe_egd.getinstances() return {} end
+function nh_safe_egd.getscripts() return {} end
+function nh_safe_egd.readfile() return nil end
+function nh_safe_egd.writefile() return false end
+function nh_safe_egd.isfile() return false end
+function nh_safe_egd.makefolder() return false end
+for nh_k_9ng,nh_v_25s in pairs(nh_safe_egd) do if rawget(_G,nh_k_9ng)==nil then rawset(_G,nh_k_9ng,nh_v_25s) end end
+local _pcall=pcall
+local _xpcall=xpcall
+local _select=select
+local _type=type
+local _tpack=table.pack
+local _tunpack=table.unpack
+local _tcreate=table.create
+local _tconcat=table.concat
+local _mfloor=math.floor
+local _ipairs=ipairs
+local _tostring=tostring
+local _rawget=rawget
+local _setmeta=setmetatable
+local _bxor=bit32.bxor
+local _band=bit32.band
+local _getmeta=getmetatable
+local _next=next
+local _hookOk=true
+local _genv=(type(getfenv)=="function" and getfenv(0)) or _G
+local _env=setmetatable({print=print,warn=warn,error=error,assert=assert,type=type,typeof=typeof,tostring=tostring,tonumber=tonumber,pcall=pcall,xpcall=xpcall,select=select,unpack=unpack,pairs=pairs,ipairs=ipairs,next=next,rawget=rawget,rawset=rawset,rawequal=rawequal,rawlen=rawlen,setmetatable=setmetatable,getmetatable=getmetatable,collectgarbage=collectgarbage,dofile=dofile,gcinfo=gcinfo,string=string,table=table,math=math,bit32=bit32,coroutine=coroutine,os=os,debug=debug,utf8=utf8,buffer=buffer,game=game,workspace=workspace,script=script,Instance=Instance,Enum=Enum,Vector3=Vector3,Vector2=Vector2,CFrame=CFrame,Color3=Color3,BrickColor=BrickColor,UDim=UDim,UDim2=UDim2,Ray=Ray,Region3=Region3,Rect=Rect,TweenInfo=TweenInfo,NumberSequence=NumberSequence,ColorSequence=ColorSequence,NumberRange=NumberRange,NumberSequenceKeypoint=NumberSequenceKeypoint,ColorSequenceKeypoint=ColorSequenceKeypoint,PhysicalProperties=PhysicalProperties,Axes=Axes,Faces=Faces,PathWaypoint=PathWaypoint,Random=Random,DateTime=DateTime,RaycastParams=RaycastParams,OverlapParams=OverlapParams,Font=Font,FloatCurveKey=FloatCurveKey,RotationCurveKey=RotationCurveKey,tick=tick,time=time,wait=wait,task=task,spawn=spawn,delay=delay,require=require,loadstring=loadstring,load=load,getfenv=getfenv,setfenv=setfenv,newproxy=newproxy,_G=_G,shared=shared,settings=settings,stats=stats,UserSettings=UserSettings,version=version},{__index=function(_,k) local ok,v=pcall(function() return _genv[k] end);if ok then return v end;return nil end})
+
+local function _run(K,code,protos,upvals,nParams,maxRegs,_isVararg,_env,...)
+protos=protos or {}
+upvals=upvals or {}
+local R=_tcreate(maxRegs+1)
+local _args={...}
+local _ac=_select("#",...)
+for _i=1,((_ac<nParams) and _ac or nParams) do R[_i]=_args[_i] end
+local VA={}
+local VAC=0
+if _isVararg then VAC=_ac-nParams;if VAC<0 then VAC=0 end;for _i=1,VAC do VA[_i]=_args[nParams+_i] end end
+local ip=1
+local openUVs={}
+local _ic={}
+local _top=0
+local _tw;do local _t=_env["task"];if _t then _tw=_t["wait"] end end
+local function RK(x) if x>=256 then return K[x-255] else return R[x+1] end end
+local _opNames={[0]="NOP",[1]="LOADK",[2]="LOADNIL",[3]="LOADBOOL",[4]="MOVE",[5]="GETGLOBAL",[6]="SETGLOBAL",[7]="GETTABLE",[8]="SETTABLE",[9]="NEWTABLE",[10]="ADD",[11]="SUB",[12]="MUL",[13]="DIV",[14]="MOD",[15]="POW",[16]="IDIV",[17]="UNM",[18]="NOT",[19]="LEN",[20]="CONCAT",[21]="JMP",[22]="EQ",[23]="LT",[24]="LE",[25]="TEST",[26]="TESTSET",[27]="CALL",[28]="TAILCALL",[29]="RETURN",[30]="FORPREP",[31]="FORLOOP",[32]="TFORLOOP",[33]="SETLIST",[34]="CLOSURE",[35]="VARARG",[36]="SELF",[37]="GETUPVAL",[38]="SETUPVAL",[39]="CLOSEUPVAL",[40]="PCALL",[41]="XPCALL",[42]="ITERPREP",[43]="LOADKX",[44]="EXTRAARG",[45]="F_TEST_JMP",[46]="F_EQ_JMP",[47]="F_LT_JMP",[48]="F_LE_JMP",[49]="F_TESTSET_JMP",[50]="F_GGET",[51]="F_LOADKK",[52]="F_MOVE_MOVE",[53]="F_SELF_CALL",[54]="F_GGET_CALL",[55]="F_LOADK_RET",[56]="F_MOVE_RET"}
+while ip<=#code do
+local a=code[ip]
+local _s1=code[ip+1]
+local _s2=code[ip+2]
+local _s3=code[ip+3]
+ip=ip+4
+print("[VM] ip="..(ip-4).." "..((_opNames and _opNames[a]) or "OP"..a).." s1="..tostring(_s1).." s2="..tostring(_s2).." s3="..tostring(_s3))
+if a==0 then local A,B,C=_s1,_s2,_s3;
+elseif a==1 then local A,B,C=_s1,_s2,_s3;R[A+1]=K[B+1]
+elseif a==2 then local A,B,C=_s1,_s2,_s3;for _i=A,A+B do R[_i+1]=nil end
+elseif a==3 then local A,B,C=_s1,_s2,_s3;R[A+1]=(B~=0);if C~=0 then ip=ip+4 end
+elseif a==4 then local A,B,C=_s1,_s2,_s3;R[A+1]=R[B+1]
+elseif a==5 then local A,B,C=_s1,_s2,_s3;do local _k=K[B+1];if _ic[1]==_k then R[A+1]=_ic[2] else local _v=_env[_k];R[A+1]=_v;_ic[1]=_k;_ic[2]=_v end end
+elseif a==6 then local A,B,C=_s1,_s2,_s3;do _env[K[B+1]]=R[A+1];_ic[1]=nil end
+elseif a==7 then local A,B,C=_s1,_s2,_s3;R[A+1]=R[B+1][RK(C)]
+elseif a==8 then local A,B,C=_s1,_s2,_s3;R[A+1][RK(B)]=RK(C)
+elseif a==9 then local A,B,C=_s1,_s2,_s3;R[A+1]={}
+elseif a==10 then local A,B,C=_s1,_s2,_s3;R[A+1]=RK(B)+RK(C)
+elseif a==11 then local A,B,C=_s1,_s2,_s3;R[A+1]=RK(B)-RK(C)
+elseif a==12 then local A,B,C=_s1,_s2,_s3;R[A+1]=RK(B)*RK(C)
+elseif a==13 then local A,B,C=_s1,_s2,_s3;R[A+1]=RK(B)/RK(C)
+elseif a==14 then local A,B,C=_s1,_s2,_s3;R[A+1]=RK(B)%RK(C)
+elseif a==15 then local A,B,C=_s1,_s2,_s3;R[A+1]=RK(B)^RK(C)
+elseif a==16 then local A,B,C=_s1,_s2,_s3;R[A+1]=_mfloor(RK(B)/RK(C))
+elseif a==17 then local A,B,C=_s1,_s2,_s3;R[A+1]=-R[B+1]
+elseif a==18 then local A,B,C=_s1,_s2,_s3;R[A+1]=not R[B+1]
+elseif a==19 then local A,B,C=_s1,_s2,_s3;R[A+1]=#R[B+1]
+elseif a==20 then local A,B,C=_s1,_s2,_s3;do if C-B<=1 then R[A+1]=R[B+1]..R[C+1] else local _t={};for _i=B,C do _t[#_t+1]=R[_i+1] end;R[A+1]=_tconcat(_t) end end
+elseif a==21 then local A,B,C=_s1,_s2,_s3;ip=ip+B*4
+elseif a==22 then local A,B,C=_s1,_s2,_s3;if (RK(B)==RK(C))~=(A~=0) then ip=ip+4 end
+elseif a==23 then local A,B,C=_s1,_s2,_s3;if (RK(B)<RK(C))~=(A~=0) then ip=ip+4 end
+elseif a==24 then local A,B,C=_s1,_s2,_s3;if (RK(B)<=RK(C))~=(A~=0) then ip=ip+4 end
+elseif a==25 then local A,B,C=_s1,_s2,_s3;if (not R[A+1])==(C~=0) then ip=ip+4 end
+elseif a==26 then local A,B,C=_s1,_s2,_s3;if (not R[B+1])==(C~=0) then ip=ip+4 else R[A+1]=R[B+1] end
+elseif a==27 then local A,B,C=_s1,_s2,_s3;do local f=R[A+1];local r;if B==1 then r=_tpack(f()) elseif B==2 then r=_tpack(f(R[A+2])) elseif B==3 then r=_tpack(f(R[A+2],R[A+3])) elseif B==0 then r=_tpack(f(_tunpack(R,A+2,_top))) else r=_tpack(f(_tunpack(R,A+2,A+B))) end;if C==0 then for _i=1,r.n do R[A+_i]=r[_i] end;_top=A+r.n else for _i=1,C-1 do R[A+_i]=r[_i] end end end
+elseif a==28 then local A,B,C=_s1,_s2,_s3;do local f=R[A+1];if B==1 then return f() elseif B==2 then return f(R[A+2]) elseif B==3 then return f(R[A+2],R[A+3]) elseif B==0 then return f(_tunpack(R,A+2,_top)) else return f(_tunpack(R,A+2,A+B)) end end
+elseif a==29 then local A,B,C=_s1,_s2,_s3;do if B==0 then return _tunpack(R,A+1,_top) elseif B==1 then return else return _tunpack(R,A+1,A+B-1) end end
+elseif a==30 then local A,B,C=_s1,_s2,_s3;R[A+1]=R[A+1]-R[A+3];ip=ip+B*4
+elseif a==31 then local A,B,C=_s1,_s2,_s3;do local step=R[A+3];local idx=R[A+1]+step;R[A+1]=idx;local lim=R[A+2];if step>0 then if idx<=lim then ip=ip+B*4;R[A+4]=idx end else if idx>=lim then ip=ip+B*4;R[A+4]=idx end end end
+elseif a==32 then local A,B,C=_s1,_s2,_s3;do local f=R[A+1];local s=R[A+2];local v=R[A+3];local r={f(s,v)};for _i=1,C do R[A+3+_i]=r[_i] end;if r[1]~=nil then R[A+3]=r[1];ip=ip+4 end end
+elseif a==33 then local A,B,C=_s1,_s2,_s3;do local t=R[A+1];local _b=B;if _b==0 then _b=_top-(A+1) end;local base=C-1;for _i=1,_b do t[base+_i]=R[A+1+_i] end end
+elseif a==34 then local A,B,C=_s1,_s2,_s3;do local proto=protos[B+1];if proto then local nU={};if proto.U then for _ui,_ud in _ipairs(proto.U) do if _ud[1]==1 then local _b;for _oi=1,#openUVs do if openUVs[_oi][2]==_ud[2]+1 then _b=openUVs[_oi];break end end;if not _b then _b={R,_ud[2]+1};openUVs[#openUVs+1]=_b end;nU[_ui]=_b else nU[_ui]=upvals[_ud[2]+1] end end end;R[A+1]=function(...) return _run(proto.K,proto.C,proto.P,proto.U and nU or {},proto.nParams,proto.mR,proto.vA,_env,...) end else R[A+1]=nil end end
+elseif a==35 then local A,B,C=_s1,_s2,_s3;do if B==0 then for _i=1,VAC do R[A+_i]=VA[_i] end;_top=A+VAC else for _i=1,B-1 do R[A+_i]=VA[_i] end end end
+elseif a==36 then local A,B,C=_s1,_s2,_s3;R[A+2]=R[B+1];R[A+1]=R[B+1][RK(C)]
+elseif a==37 then local A,B,C=_s1,_s2,_s3;do local _b=upvals[B+1];if _b[2] then R[A+1]=_b[1][_b[2]] else R[A+1]=_b[1] end end
+elseif a==38 then local A,B,C=_s1,_s2,_s3;do local _b=upvals[B+1];if _b[2] then _b[1][_b[2]]=R[A+1] else _b[1]=R[A+1] end end
+elseif a==39 then local A,B,C=_s1,_s2,_s3;do local _n=0;for _i=1,#openUVs do local _b=openUVs[_i];if _b[2]>=A+1 then _b[1]=_b[1][_b[2]];_b[2]=nil else _n=_n+1;openUVs[_n]=_b end end;for _i=_n+1,#openUVs do openUVs[_i]=nil end end
+elseif a==40 then local A,B,C=_s1,_s2,_s3;do local f=R[A+1];local r;if B==1 then r=_tpack(_pcall(f)) elseif B==2 then r=_tpack(_pcall(f,R[A+2])) elseif B==3 then r=_tpack(_pcall(f,R[A+2],R[A+3])) else r=_tpack(_pcall(f,_tunpack(R,A+2,A+B))) end;if C==0 then for _i=1,r.n do R[A+_i]=r[_i] end;_top=A+r.n else for _i=1,C-1 do R[A+_i]=r[_i] end end end
+elseif a==41 then local A,B,C=_s1,_s2,_s3;do local f=R[A+1];local eh=R[A+2];local r;if B<=2 then r=_tpack(_xpcall(f,eh)) elseif B==3 then r=_tpack(_xpcall(f,eh,R[A+3])) else r=_tpack(_xpcall(f,eh,_tunpack(R,A+3,A+B))) end;if C==0 then for _i=1,r.n do R[A+_i]=r[_i] end;_top=A+r.n else for _i=1,C-1 do R[A+_i]=r[_i] end end end
+elseif a==42 then local A,B,C=_s1,_s2,_s3;do local it=R[A+1];if _type(it)=="table" then local ok,mt=_pcall(_getmeta,it);if ok and _type(mt)=="table" and mt.__iter then R[A+1]=mt.__iter(it) else R[A+1]=_next;R[A+2]=it;R[A+3]=nil end end end
+elseif a==43 then local A,B,C=_s1,_s2,_s3;local ex=code[ip+1];R[A+1]=K[ex+1];ip=ip+4
+elseif a==44 then local A,B,C=_s1,_s2,_s3;
+elseif a==45 then local A,B,C=_s1,_s2,_s3;do local _j=code[ip+2];if (not R[A+1])==(C~=0) then ip=ip+4 else ip=ip+4+_j*4 end end
+elseif a==46 then local A,B,C=_s1,_s2,_s3;do local _j=code[ip+2];if (RK(B)==RK(C))==(A~=0) then ip=ip+4+_j*4 else ip=ip+4 end end
+elseif a==47 then local A,B,C=_s1,_s2,_s3;do local _lv,_rv=RK(B),RK(C);local _o=code[ip+2]*4;ip=ip+4;if (_lv<_rv)==(A~=0) then ip=ip+_o end end
+elseif a==48 then local A,B,C=_s1,_s2,_s3;do local _j=code[ip+2];if (RK(B)<=RK(C))==(A~=0) then ip=ip+4+_j*4 else ip=ip+4 end end
+elseif a==49 then local A,B,C=_s1,_s2,_s3;do local _bv=R[B+1];local _j=code[ip+2];if (not _bv)==(C~=0) then ip=ip+4 else R[A+1]=_bv;ip=ip+4+_j*4 end end
+elseif a==50 then local A,B,C=_s1,_s2,_s3;do local _A2=code[ip+1];local _C2=code[ip+3];local _g=_env[K[B+1]];R[A+1]=_g;R[_A2+1]=_g[RK(_C2)];ip=ip+4 end
+elseif a==51 then local A,B,C=_s1,_s2,_s3;do local _A2=code[ip+1];local _B2=code[ip+2];R[A+1]=K[B+1];R[_A2+1]=K[_B2+1];ip=ip+4 end
+elseif a==52 then local A,B,C=_s1,_s2,_s3;do local _A2=code[ip+1];local _B2=code[ip+2];R[A+1]=R[B+1];R[_A2+1]=R[_B2+1];ip=ip+4 end
+elseif a==53 then local A,B,C=_s1,_s2,_s3;do R[A+2]=R[B+1];local f=R[B+1][RK(C)];R[A+1]=f;local _B2=code[ip+2];local _C2=code[ip+3];ip=ip+4;local r;if _B2==2 then r=_tpack(f(R[A+2])) elseif _B2==3 then r=_tpack(f(R[A+2],R[A+3])) elseif _B2==0 then r=_tpack(f(_tunpack(R,A+2,_top))) else r=_tpack(f(_tunpack(R,A+2,A+_B2))) end;if _C2==0 then for _i=1,r.n do R[A+_i]=r[_i] end;_top=A+r.n else for _i=1,_C2-1 do R[A+_i]=r[_i] end end end
+elseif a==54 then local A,B,C=_s1,_s2,_s3;do local _A2=code[ip+1];local _C2=code[ip+3];local _A3=code[ip+5];local _B3=code[ip+6];local _C3=code[ip+7];local _g=_env[K[B+1]];R[A+1]=_g;local f=_g[RK(_C2)];R[_A2+1]=f;ip=ip+8;local r;if _B3==1 then r=_tpack(f()) elseif _B3==2 then r=_tpack(f(R[_A3+2])) elseif _B3==3 then r=_tpack(f(R[_A3+2],R[_A3+3])) elseif _B3==0 then r=_tpack(f(_tunpack(R,_A3+2,_top))) else r=_tpack(f(_tunpack(R,_A3+2,_A3+_B3))) end;if _C3==0 then for _i=1,r.n do R[_A3+_i]=r[_i] end;_top=_A3+r.n else for _i=1,_C3-1 do R[_A3+_i]=r[_i] end end end
+elseif a==55 then local A,B,C=_s1,_s2,_s3;do R[A+1]=K[B+1];ip=ip+4;return R[A+1] end
+elseif a==56 then local A,B,C=_s1,_s2,_s3;do R[A+1]=R[B+1];local _A2=code[ip+1];local _B2=code[ip+2];ip=ip+4;if _B2==2 then return R[_A2+1] elseif _B2==1 then return elseif _B2==0 then return _tunpack(R,_A2+1,_top) else return _tunpack(R,_A2+1,_A2+_B2-1) end end
+end
+end
+end
+local _dK={"print","hi"}
+local _dC={5,0,0,0,1,1,1,0,27,0,2,1,29,0,1,0}
+local _dP={}
+return _run(_dK,_dC,_dP,{},0,3,true,_env)

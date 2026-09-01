@@ -9,22 +9,22 @@ ___   ___  ________  _________  ________  ________  _______      ___    ___
 https://nevahex.dev | NEVAHEX Multi-Target Lua/Luau Protection - VM-grade bytecode for Lua 5.1-5.4 and Roblox Luau
 ]]
 --[[ NEVAHEX target=luau ]]
-local nh_tgt_46n="luau"
-local nh_exec_pdi="unknown"
-if type(game)~="nil" and typeof and typeof(game)~="nil" then nh_exec_pdi="roblox" end
-if type(syn)~="table" then nh_exec_pdi="synapse" end
-if type(fluxus)~="table" then nh_exec_pdi="fluxus" end
-if type(identifyexecutor)=="function" then local _n=identifyexecutor();if type(_n)=="string" then nh_exec_pdi=_n end end
+local nh_tgt_8np="luau"
+local nh_exec_xzp="unknown"
+if type(game)~="nil" and typeof and typeof(game)~="nil" then nh_exec_xzp="roblox" end
+if type(syn)~="table" then nh_exec_xzp="synapse" end
+if type(fluxus)~="table" then nh_exec_xzp="fluxus" end
+if type(identifyexecutor)=="function" then local _n=identifyexecutor();if type(_n)=="string" then nh_exec_xzp=_n end end
 if type(bit32)=="table" then bit32=bit32
 else
-  local nh_b32_pax={}
-  function nh_b32_pax.bxor(a,b) local r=0;for i=0,31 do local x,y=((a//(2^i))%2),((b//(2^i))%2);if (x+y)%2==1 then r=r+(2^i) end end;return r end
-  function nh_b32_pax.band(a,b) local r=0;for i=0,31 do if ((a//(2^i))%2==1) and ((b//(2^i))%2==1) then r=r+(2^i) end end;return r end
-  function nh_b32_pax.bor(a,b) local r=0;for i=0,31 do if ((a//(2^i))%2==1) or ((b//(2^i))%2==1) then r=r+(2^i) end end;return r end
-  function nh_b32_pax.lrotate(a,disp) disp=disp%32;if disp<0 then disp=disp+32 end;return ((a<<disp)|(a>>(32-disp)))&0xFFFFFFFF end
-  function nh_b32_pax.lshift(a,disp) return (a<<disp)&0xFFFFFFFF end
-  function nh_b32_pax.rshift(a,disp) return a>>disp end
-  bit32=nh_b32_pax
+  local nh_b32_oae={}
+  function nh_b32_oae.bxor(a,b) local r=0;for i=0,31 do local x,y=((a//(2^i))%2),((b//(2^i))%2);if (x+y)%2==1 then r=r+(2^i) end end;return r end
+  function nh_b32_oae.band(a,b) local r=0;for i=0,31 do if ((a//(2^i))%2==1) and ((b//(2^i))%2==1) then r=r+(2^i) end end;return r end
+  function nh_b32_oae.bor(a,b) local r=0;for i=0,31 do if ((a//(2^i))%2==1) or ((b//(2^i))%2==1) then r=r+(2^i) end end;return r end
+  function nh_b32_oae.lrotate(a,disp) disp=disp%32;if disp<0 then disp=disp+32 end;return ((a<<disp)|(a>>(32-disp)))&0xFFFFFFFF end
+  function nh_b32_oae.lshift(a,disp) return (a<<disp)&0xFFFFFFFF end
+  function nh_b32_oae.rshift(a,disp) return a>>disp end
+  bit32=nh_b32_oae
 end
 if type(table.create)~="function" then table.create=function(n,v) local t={};for _i=1,n do t[_i]=v end;return t end end
 if type(table.pack)~="function" then table.pack=function(...) return {n=select("#",...),...} end end
@@ -37,24 +37,24 @@ if type(string.pack)~="function" or not pcall(string.pack,">I4",0) then
   string.unpack=_orig_unpack or function(s,fmt) return string.byte(s,1),2 end;
   string.packsize=string.packsize or function(fmt) local n=0;for i=1,#fmt do local c=string.sub(fmt,i,i);if c=="I" or c=="i" then n=n+4 end end;return n end;
 end
-local nh_safe_19zr={}
-function nh_safe_19zr.hookfunction(f,r) return r end
-function nh_safe_19zr.hookmetamethod(t,k,f) return f end
-function nh_safe_19zr.newcclosure(f) return f end
-function nh_safe_19zr.getrawmetatable(t) local mt=getmetatable(t);if type(mt)=="table" and mt.__metatable then return nil end;return mt end
-function nh_safe_19zr.isreadonly(t) return false end
-function nh_safe_19zr.makewriteable(t) return t end
-function nh_safe_19zr.checkcaller() return false end
-function nh_safe_19zr.cloneref(r) return r end
-function nh_safe_19zr.getconnections() return {} end
-function nh_safe_19zr.getgc() return {} end
-function nh_safe_19zr.getinstances() return {} end
-function nh_safe_19zr.getscripts() return {} end
-function nh_safe_19zr.readfile() return nil end
-function nh_safe_19zr.writefile() return false end
-function nh_safe_19zr.isfile() return false end
-function nh_safe_19zr.makefolder() return false end
-for nh_k_k9s,nh_v_jg4 in pairs(nh_safe_19zr) do if rawget(_G,nh_k_k9s)==nil then rawset(_G,nh_k_k9s,nh_v_jg4) end end
+local nh_safe_y18={}
+function nh_safe_y18.hookfunction(f,r) return r end
+function nh_safe_y18.hookmetamethod(t,k,f) return f end
+function nh_safe_y18.newcclosure(f) return f end
+function nh_safe_y18.getrawmetatable(t) local mt=getmetatable(t);if type(mt)=="table" and mt.__metatable then return nil end;return mt end
+function nh_safe_y18.isreadonly(t) return false end
+function nh_safe_y18.makewriteable(t) return t end
+function nh_safe_y18.checkcaller() return false end
+function nh_safe_y18.cloneref(r) return r end
+function nh_safe_y18.getconnections() return {} end
+function nh_safe_y18.getgc() return {} end
+function nh_safe_y18.getinstances() return {} end
+function nh_safe_y18.getscripts() return {} end
+function nh_safe_y18.readfile() return nil end
+function nh_safe_y18.writefile() return false end
+function nh_safe_y18.isfile() return false end
+function nh_safe_y18.makefolder() return false end
+for nh_k_okz,nh_v_4l in pairs(nh_safe_y18) do if rawget(_G,nh_k_okz)==nil then rawset(_G,nh_k_okz,nh_v_4l) end end
 local _pcall=pcall
 local _xpcall=xpcall
 local _select=select
@@ -261,16 +261,16 @@ elseif a==41 then local A,B,C=_s1,_s2,_s3;do local f=R[A+1];local eh=R[A+2];loca
 elseif a==42 then local A,B,C=_s1,_s2,_s3;do local it=R[A+1];if _type(it)=="table" then local ok,mt=_pcall(_getmeta,it);if ok and _type(mt)=="table" and mt.__iter then R[A+1]=mt.__iter(it) else R[A+1]=_next;R[A+2]=it;R[A+3]=nil end end end
 elseif a==43 then local A,B,C=_s1,_s2,_s3;local ex=code[ip+1];R[A+1]=K[ex+1];ip=ip+4
 elseif a==44 then local A,B,C=_s1,_s2,_s3;
-elseif a==45 then local A,B,C=_s1,_s2,_s3;do local _j=code[ip+2];if (not R[A+1])==(C~=0) then ip=ip+4 else ip=ip+4+_j*4 end end
-elseif a==46 then local A,B,C=_s1,_s2,_s3;do local _lv,_rv=RK(B),RK(C);local _j=code[ip+2];if (_lv==_rv)~=(A~=0) then ip=ip+4 else ip=ip+4+_j*4 end end
-elseif a==47 then local A,B,C=_s1,_s2,_s3;do local _j=code[ip+2];if (RK(B)<RK(C))==(A~=0) then ip=ip+4+_j*4 else ip=ip+4 end end
-elseif a==48 then local A,B,C=_s1,_s2,_s3;do local _j=code[ip+2];if (RK(B)<=RK(C))==(A~=0) then ip=ip+4+_j*4 else ip=ip+4 end end
+elseif a==45 then local A,B,C=_s1,_s2,_s3;do local _j=code[ip+2];if (not R[A+1])~=(C~=0) then ip=ip+4+_j*4 else ip=ip+4 end end
+elseif a==46 then local A,B,C=_s1,_s2,_s3;do local _j=code[ip+2];if (RK(B)==RK(C))==(A~=0) then ip=ip+4+_j*4 else ip=ip+4 end end
+elseif a==47 then local A,B,C=_s1,_s2,_s3;do local _lv,_rv=RK(B),RK(C);local _o=code[ip+2]*4;ip=ip+4;if (_lv<_rv)==(A~=0) then ip=ip+_o end end
+elseif a==48 then local A,B,C=_s1,_s2,_s3;do local _lv,_rv=RK(B),RK(C);local _o=code[ip+2]*4;ip=ip+4;if (_lv<=_rv)==(A~=0) then ip=ip+_o end end
 elseif a==49 then local A,B,C=_s1,_s2,_s3;do local _bv=R[B+1];local _j=code[ip+2];if (not _bv)==(C~=0) then ip=ip+4 else R[A+1]=_bv;ip=ip+4+_j*4 end end
 elseif a==50 then local A,B,C=_s1,_s2,_s3;do local _A2=code[ip+1];local _C2=code[ip+3];local _g=_env[K[B+1]];R[A+1]=_g;R[_A2+1]=_g[RK(_C2)];ip=ip+4 end
 elseif a==51 then local A,B,C=_s1,_s2,_s3;do local _A2=code[ip+1];local _B2=code[ip+2];R[A+1]=K[B+1];R[_A2+1]=K[_B2+1];ip=ip+4 end
 elseif a==52 then local A,B,C=_s1,_s2,_s3;do local _A2=code[ip+1];local _B2=code[ip+2];R[A+1]=R[B+1];R[_A2+1]=R[_B2+1];ip=ip+4 end
-elseif a==53 then local A,B,C=_s1,_s2,_s3;do R[A+2]=R[B+1];local f=R[B+1][RK(C)];R[A+1]=f;local _B2=code[ip+2];local _C2=code[ip+3];ip=ip+4;local r;if _B2==2 then r=_tpack(f(R[A+2])) elseif _B2==3 then r=_tpack(f(R[A+2],R[A+3])) elseif _B2==0 then r=_tpack(f(_tunpack(R,A+2,_top))) else r=_tpack(f(_tunpack(R,A+2,A+_B2))) end;if _C2==0 then for _i=1,r.n do R[A+_i]=r[_i] end;_top=A+r.n else for _i=1,_C2-1 do R[A+_i]=r[_i] end end end
-elseif a==54 then local A,B,C=_s1,_s2,_s3;do local _A2=code[ip+1];local _C2=code[ip+3];local _A3=code[ip+5];local _B3=code[ip+6];local _C3=code[ip+7];local _g=_env[K[B+1]];R[A+1]=_g;R[_A2+1]=_g[RK(_C2)];local f=R[_A2+1];ip=ip+8;local r;if _B3==1 then r=_tpack(f()) elseif _B3==2 then r=_tpack(f(R[_A3+2])) elseif _B3==3 then r=_tpack(f(R[_A3+2],R[_A3+3])) elseif _B3==0 then r=_tpack(f(_tunpack(R,_A3+2,_top))) else r=_tpack(f(_tunpack(R,_A3+2,_A3+_B3))) end;if _C3==0 then for _i=1,r.n do R[_A3+_i]=r[_i] end;_top=_A3+r.n else for _i=1,_C3-1 do R[_A3+_i]=r[_i] end end end
+elseif a==53 then local A,B,C=_s1,_s2,_s3;do local _s=R[B+1];R[A+2]=_s;local f=_s[RK(C)];R[A+1]=f;local _B2=code[ip+2];local _C2=code[ip+3];ip=ip+4;local r;if _B2==2 then r=_tpack(f(R[A+2])) elseif _B2==3 then r=_tpack(f(R[A+2],R[A+3])) elseif _B2==0 then r=_tpack(f(_tunpack(R,A+2,_top))) else r=_tpack(f(_tunpack(R,A+2,A+_B2))) end;if _C2==0 then for _i=1,r.n do R[A+_i]=r[_i] end;_top=A+r.n else for _i=1,_C2-1 do R[A+_i]=r[_i] end end end
+elseif a==54 then local A,B,C=_s1,_s2,_s3;do local _A2=code[ip+1];local _C2=code[ip+3];local _A3=code[ip+5];local _B3=code[ip+6];local _C3=code[ip+7];local _g=_env[K[B+1]];R[A+1]=_g;local f=_g[RK(_C2)];R[_A2+1]=f;ip=ip+8;local r;if _B3==1 then r=_tpack(f()) elseif _B3==2 then r=_tpack(f(R[_A3+2])) elseif _B3==3 then r=_tpack(f(R[_A3+2],R[_A3+3])) elseif _B3==0 then r=_tpack(f(_tunpack(R,_A3+2,_top))) else r=_tpack(f(_tunpack(R,_A3+2,_A3+_B3))) end;if _C3==0 then for _i=1,r.n do R[_A3+_i]=r[_i] end;_top=_A3+r.n else for _i=1,_C3-1 do R[_A3+_i]=r[_i] end end end
 elseif a==55 then local A,B,C=_s1,_s2,_s3;do local _v=K[B+1];ip=ip+4;return _v end
 elseif a==56 then local A,B,C=_s1,_s2,_s3;do local _A2=code[ip+1];local _B2=code[ip+2];R[A+1]=R[B+1];ip=ip+4;if _B2==0 then return _tunpack(R,_A2+1,_top) elseif _B2==1 then return else return _tunpack(R,_A2+1,_A2+_B2-1) end end
 end

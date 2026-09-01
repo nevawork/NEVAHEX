@@ -76,6 +76,10 @@ function printStatement(stmt: Statement | LastStatement): string {
       return "break";
     case "ContinueStatement":
       return "continue";
+    case "GotoStatement":
+      return stmt.label ? `goto ${stmt.label}` : "goto";
+    case "LabelStatement":
+      return `::${stmt.name}::`;
     default:
       return "";
   }
@@ -238,16 +242,22 @@ function printParam(p: Param): string {
 }
 
 function printLocalStatement(stmt: {
-  vars: { name: string; type?: Type }[];
+  vars: { name: string; type?: Type; attribute?: string }[];
   values?: Expression[];
+  prefix?: "local" | "const";
 }): string {
+  const keyword = stmt.prefix === "const" ? "const" : "local";
   const vars = stmt.vars
-    .map((v) => (v.type ? `${v.name}: ${printType(v.type)}` : v.name))
+    .map((v) => {
+      const attr = v.attribute && stmt.prefix !== "const" ? `<${v.attribute}> ` : "";
+      const t = v.type ? `: ${printType(v.type)}` : "";
+      return `${attr}${v.name}${t}`;
+    })
     .join(", ");
   if (stmt.values?.length) {
-    return `local ${vars} = ${stmt.values.map(printExpression).join(", ")}`;
+    return `${keyword} ${vars} = ${stmt.values.map(printExpression).join(", ")}`;
   }
-  return `local ${vars}`;
+  return `${keyword} ${vars}`;
 }
 
 function printTypeStatement(stmt: {

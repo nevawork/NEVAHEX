@@ -810,8 +810,8 @@ export class Lexer {
       case "/": this.advance(); if (c2 === "/") { this.advance(); if (this.peek() === "=") { this.advance(); return "//="; } return "//"; } if (c2 === "=") { this.advance(); return "/="; } return "/";
       case "%": this.advance(); if (c2 === "=") { this.advance(); return "%="; } return "%";
       case "^": this.advance(); if (c2 === "=") { this.advance(); return "^="; } return "^";
-      case "<": this.advance(); if (c2 === "=") { this.advance(); return "<="; } return "<";
-      case ">": this.advance(); if (c2 === "=") { this.advance(); return ">="; } return ">";
+      case "<": this.advance(); if (c2 === "=") { this.advance(); return "<="; } if (c2 === "<") { this.advance(); if (this.peek() === "=") { this.advance(); return "<<="; } return "<<"; } return "<";
+      case ">": this.advance(); if (c2 === "=") { this.advance(); return ">="; } if (c2 === ">") { this.advance(); if (this.peek() === "=") { this.advance(); return ">>="; } return ">>"; } return ">";
       case "=": this.advance(); if (c2 === "=") { this.advance(); return "=="; } return "=";
       case "~": this.advance(); if (c2 === "=") { this.advance(); return "~="; } return "~";
       case ".": this.advance(); if (c2 === ".") { this.advance(); const c3 = this.peek(); if (c3 === ".") { this.advance(); return "..."; } if (c3 === "=") { this.advance(); return "..="; } return ".."; } return ".";
@@ -825,8 +825,8 @@ export class Lexer {
       case "]": this.advance(); return "]";
       case "{": this.advance(); return "{";
       case "}": this.advance(); return "}";
-      case "|": this.advance(); return "|";
-      case "&": this.advance(); return "&";
+      case "|": this.advance(); if (c2 === "|") { this.advance(); return "||"; } if (c2 === "=") { this.advance(); return "|="; } return "|";
+      case "&": this.advance(); if (c2 === "&") { this.advance(); return "&&"; } if (c2 === "=") { this.advance(); return "&="; } return "&";
       case "?": this.advance(); return "?";
       case "@": this.advance(); return "@";
       default: return null;

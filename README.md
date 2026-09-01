@@ -1,162 +1,41 @@
-<div align="center">
+# NEVAHEX
 
-# Clyde-Luau-Obfuscator
+**Multi-Target Lua / Luau Obfuscator with VM-Based Protection**
 
-**Advanced Luau Obfuscator with VM-Based Protection**
-
-A high-performance Luau obfuscation toolkit featuring full language support, multi-pass AST transformations, and dual virtual machine architectures for maximum code protection.
+NEVAHEX is a from-scratch Lua and Luau obfuscator supporting **Lua 5.1, 5.2, 5.3, 5.4, and Roblox Luau** (with an executor compatibility layer). It implements a complete **Lexer → Parser → AST → Obfuscation Passes → VM → Custom Cipher → Bootstrap** pipeline with no external parsing dependencies.
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.3+-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Node.js](https://img.shields.io/badge/Node.js-18+-339933?style=flat-square&logo=node.js&logoColor=white)](https://nodejs.org/)
-[![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](./LICENSE)
-[![Stars](https://img.shields.io/github/stars/sfr-development/Clyde-Luau-Obfuscator?style=flat-square)](https://github.com/sfr-development/Clyde-Luau-Obfuscator/stargazers)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](./LICENSE)
+[![Targets](https://img.shields.io/badge/Targets-Lua%205.1--5.4%20%7C%20Luau-7c3aed?style=flat-square)](#supported-targets)
 
-</div>
-
----
-
-## Overview
-
-Clyde is a from-scratch Luau obfuscator built entirely in TypeScript. It implements a complete **Lexer > Parser > AST > Obfuscator > VM** pipeline with no external parsing dependencies. Every stage — tokenization, full Luau grammar parsing (including type annotations), AST transformations, bytecode compilation, and VM code generation — is hand-written for maximum control and output quality.
-
-### Key Features
-
-- **Full Luau Support** — Complete lexer and parser covering the entire Luau grammar including type annotations, generics, if-else expressions, string interpolation, compound assignments, and `continue`
-- **Multi-Pass Obfuscation** — Identifier renaming, string encoding, and control flow scrambling applied as composable AST passes
-- **Dual VM Architectures** — Both stack-based and register-based virtual machines with configurable protection levels
-- **Web UI** — Built-in Express server with a browser-based interface for interactive obfuscation
-- **CLI Tools** — Scriptable command-line interface for batch processing and CI/CD integration
-- **Validation** — Pre-obfuscation syntax validation to catch errors early
+> NEVAHEX is derived from [Clyde-Luau-Obfuscator](https://github.com/sfr-development/Clyde-Luau-Obfuscator) by sfr-development (MIT). See [THIRD_PARTY.md](./THIRD_PARTY.md).
 
 ---
 
-## Architecture
+## Supported Targets
 
-### High-Level Pipeline
+| Target | Status | Notes |
+|--------|--------|-------|
+| Lua 5.1 | ✅ | `bit32` polyfilled at runtime; full grammar |
+| Lua 5.2 | ✅ | `goto` / `::label::` supported |
+| Lua 5.3 | ✅ | integers, bitwise (`& \| ~ << >>`), `//` floor div |
+| Lua 5.4 | ✅ | `<const>` / `<close>` attributes, `load` instead of `loadstring` |
+| Roblox Luau | ✅ | types, interpolation, `continue`, `const`, executor compatibility layer |
 
-```mermaid
-graph LR
-    A["Luau Source"] --> B["Lexer"]
-    B --> C["Parser"]
-    C --> D["AST Transforms"]
-    D --> E{"Output Mode"}
-    E -->|"Direct"| F["Printer"]
-    E -->|"Stack VM"| G["Stack Compiler"]
-    E -->|"Register VM"| H["Register Compiler"]
-    G --> I["VM Generator"]
-    H --> J["Reg-VM Generator"]
-    F --> K["Obfuscated Luau"]
-    I --> K
-    J --> K
+The Roblox Luau target ships a **runtime polyfill layer** that probes for common Roblox services (`game`, `workspace`, `script`, `Lighting`, `Players`, …) and executor APIs (`hookfunction`, `hookmetamethod`, `Drawing`, `getrawmetatable`, `syn`, `fluxus`, …) and provides safe fallbacks when they are missing. This means the same obfuscated script works in stock Roblox, popular executors, and a plain Luau interpreter without source changes.
 
-    style A fill:#1a1a2e,stroke:#4fc3f7,color:#e0e0e0
-    style B fill:#1a1a2e,stroke:#4fc3f7,color:#e0e0e0
-    style C fill:#1a1a2e,stroke:#4fc3f7,color:#e0e0e0
-    style D fill:#1a1a2e,stroke:#4fc3f7,color:#e0e0e0
-    style E fill:#0d2137,stroke:#81d4fa,color:#e0e0e0
-    style F fill:#1a1a2e,stroke:#4fc3f7,color:#e0e0e0
-    style G fill:#1a1a2e,stroke:#4fc3f7,color:#e0e0e0
-    style H fill:#1a1a2e,stroke:#4fc3f7,color:#e0e0e0
-    style I fill:#1a1a2e,stroke:#4fc3f7,color:#e0e0e0
-    style J fill:#1a1a2e,stroke:#4fc3f7,color:#e0e0e0
-    style K fill:#0d3b0d,stroke:#66bb6a,color:#e0e0e0
-```
+---
 
-### Obfuscation Passes
+## Features
 
-```mermaid
-graph TD
-    AST["Parsed AST"] --> R{"Rename Locals?"}
-    R -->|Yes| REN["Identifier Renaming<br/><i>Scope-aware variable renaming</i>"]
-    R -->|No| SE
-    REN --> SE{"Encode Strings?"}
-    SE -->|Yes| STR["String Encoding<br/><i>XOR / dynamic decoding stubs</i>"]
-    SE -->|No| CF
-    STR --> CF{"Scramble Control Flow?"}
-    CF -->|Yes| CFS["Control Flow Scrambling<br/><i>Opaque predicates + dispatch tables</i>"]
-    CF -->|No| OUT["Transformed AST"]
-    CFS --> OUT
-
-    style AST fill:#1a1a2e,stroke:#4fc3f7,color:#e0e0e0
-    style R fill:#0d2137,stroke:#81d4fa,color:#e0e0e0
-    style REN fill:#1a1a2e,stroke:#4fc3f7,color:#e0e0e0
-    style SE fill:#0d2137,stroke:#81d4fa,color:#e0e0e0
-    style STR fill:#1a1a2e,stroke:#4fc3f7,color:#e0e0e0
-    style CF fill:#0d2137,stroke:#81d4fa,color:#e0e0e0
-    style CFS fill:#1a1a2e,stroke:#4fc3f7,color:#e0e0e0
-    style OUT fill:#0d3b0d,stroke:#66bb6a,color:#e0e0e0
-```
-
-### VM Compilation Flow
-
-```mermaid
-graph TD
-    A["Obfuscated AST"] --> B["Bytecode Compiler"]
-    B --> C["Instruction Stream<br/><i>opcodes + operands + constants</i>"]
-    C --> D{"VM Architecture"}
-    
-    D -->|"Stack-Based"| E["Stack VM Generator"]
-    D -->|"Register-Based"| F["Register VM Generator"]
-    
-    E --> G["Protection Level"]
-    F --> G
-    
-    G -->|"Debug"| H["Readable output<br/><i>named opcodes, comments</i>"]
-    G -->|"Normal"| I["Standard protection<br/><i>shuffled opcodes, encoded constants</i>"]
-    G -->|"Maximum"| J["Full protection<br/><i>polymorphic dispatch, LZMA compression</i>"]
-    
-    H --> K["Self-Contained Luau Script"]
-    I --> K
-    J --> K
-
-    style A fill:#1a1a2e,stroke:#4fc3f7,color:#e0e0e0
-    style B fill:#1a1a2e,stroke:#4fc3f7,color:#e0e0e0
-    style C fill:#1a1a2e,stroke:#4fc3f7,color:#e0e0e0
-    style D fill:#0d2137,stroke:#81d4fa,color:#e0e0e0
-    style E fill:#1a1a2e,stroke:#4fc3f7,color:#e0e0e0
-    style F fill:#1a1a2e,stroke:#4fc3f7,color:#e0e0e0
-    style G fill:#0d2137,stroke:#81d4fa,color:#e0e0e0
-    style H fill:#1a1a2e,stroke:#4fc3f7,color:#e0e0e0
-    style I fill:#1a1a2e,stroke:#4fc3f7,color:#e0e0e0
-    style J fill:#1a1a2e,stroke:#4fc3f7,color:#e0e0e0
-    style K fill:#0d3b0d,stroke:#66bb6a,color:#e0e0e0
-```
-
-### Project Structure
-
-```mermaid
-graph TD
-    ROOT["Clyde-Luau-Obfuscator/"] --> SRC["src/"]
-    ROOT --> PUB["public/"]
-    
-    SRC --> LEX["lexer/<br/><i>Tokenizer + token types</i>"]
-    SRC --> PAR["parser/<br/><i>Recursive descent parser + type parser</i>"]
-    SRC --> AST2["ast/<br/><i>AST node type definitions</i>"]
-    SRC --> OBF["obfuscator/<br/><i>Renamer, StringEncoder, ControlFlowScrambler, Printer</i>"]
-    SRC --> CMP["compiler/<br/><i>Luau syntax validator</i>"]
-    SRC --> VM["vm/<br/><i>Stack + Register compilers, VM generators, LZMA</i>"]
-    SRC --> CLI["cli/<br/><i>CLI entry points</i>"]
-    SRC --> SRV["server.ts<br/><i>Express API server</i>"]
-    
-    PUB --> HTML["index.html"]
-    PUB --> CSS["style.css"]
-    PUB --> JS["app.js"]
-
-    style ROOT fill:#1a1a2e,stroke:#4fc3f7,color:#e0e0e0
-    style SRC fill:#1a1a2e,stroke:#4fc3f7,color:#e0e0e0
-    style PUB fill:#1a1a2e,stroke:#4fc3f7,color:#e0e0e0
-    style LEX fill:#0d2137,stroke:#81d4fa,color:#e0e0e0
-    style PAR fill:#0d2137,stroke:#81d4fa,color:#e0e0e0
-    style AST2 fill:#0d2137,stroke:#81d4fa,color:#e0e0e0
-    style OBF fill:#0d2137,stroke:#81d4fa,color:#e0e0e0
-    style CMP fill:#0d2137,stroke:#81d4fa,color:#e0e0e0
-    style VM fill:#0d2137,stroke:#81d4fa,color:#e0e0e0
-    style CLI fill:#0d2137,stroke:#81d4fa,color:#e0e0e0
-    style SRV fill:#0d2137,stroke:#81d4fa,color:#e0e0e0
-    style HTML fill:#1a1a2e,stroke:#4fc3f7,color:#e0e0e0
-    style CSS fill:#1a1a2e,stroke:#4fc3f7,color:#e0e0e0
-    style JS fill:#1a1a2e,stroke:#4fc3f7,color:#e0e0e0
-```
+- **Multi-target lexer + parser** for Lua 5.1–5.4 and Roblox Luau, including type annotations, generics, if-else expressions, string interpolation, compound assignment, `continue`, `goto` (5.2+), bitwise ops (5.3+), `<const>`/`<close>` (5.4+).
+- **Multi-pass obfuscation** — scope-aware identifier renaming (with seed control), XOR string encoding (interpolation-aware), and **real control-flow flattening** plus opaque-predicate condition wrapping.
+- **Dual VM architecture** — both a stack-based and a register-based virtual machine with closure, upvalue, vararg, multi-return, and metamethod support.
+- **Three protection levels** — `debug`, `normal`, `maximum` — with opcode shuffling, polymorphic dispatch, anti-tamper hashing, LZMA compression, multi-layer cipher (SBox + XOR-stream + base85), watermark, and self-zeroing bytecode.
+- **Web UI + CLI + API** — built-in Express server, browser dashboard with target selector, scriptable CLI, programmatic TypeScript API.
+- **Validation** — pre-obfuscation syntax validation with per-target feature detection and unknown-global warnings.
+- **Tests** — lexer, parser, compiler, both VMs, closures, upvalues, varargs, tables, metamethods, loops, calls, control flow, obfuscator passes, multi-target, and a Roblox executor simulator.
 
 ---
 
@@ -167,168 +46,167 @@ graph TD
 - **Node.js** 18 or higher
 - **npm** 9 or higher
 
-### Installation
+### Install
 
 ```bash
-git clone https://github.com/sfr-development/Clyde-Luau-Obfuscator.git
-cd Clyde-Luau-Obfuscator
+git clone https://github.com/nevahex/nevahex.git
+cd nevahex
 npm install
 npm run build
 ```
 
 ### Web UI
 
-Start the built-in server with live browser interface:
-
 ```bash
-node dist/server.js
+npm run serve
 ```
 
-Open [http://localhost:3000](http://localhost:3000) to access the obfuscation dashboard.
+Open <http://localhost:3000> to access the NEVAHEX dashboard. Pick a target from the dropdown, paste Luau/Lua source, choose options, click **Obfuscate**.
 
-### CLI Usage
-
-**Obfuscate a file:**
+### CLI
 
 ```bash
-npm run obfuscate -- input.lua
+# Lex tokens
+npm run lex -- path/to/script.lua
+
+# Parse to AST
+npm run parse -- path/to/script.lua
+
+# Obfuscate (Lua 5.4 example, register VM, max protection)
+npm run obfuscate -- --target lua54 --vm register --max --output out.lua path/to/script.lua
 ```
 
-**Lex tokens:**
+Flags:
 
-```bash
-npm run lex -- input.lua
-```
-
-**Parse AST:**
-
-```bash
-npm run parse -- input.lua
-```
+| Flag | Description |
+|------|-------------|
+| `--target lua51\|lua52\|lua53\|lua54\|luau` | Output target (default: `luau`) |
+| `--no-rename` | Skip identifier renaming |
+| `--no-preserve` | Do not preserve Roblox/Lua globals |
+| `--encode-strings` / `--no-encode` | XOR string encoding |
+| `--scramble` | Enable control-flow flattening + opaque predicates |
+| `--vm stack\|register` | Generate VM-protected output |
+| `--junk` | Inject junk code |
+| `--one-line` | Minify output to a single line |
+| `--production` / `--advanced` / `--max` | Protection level |
+| `--compress` / `--no-compress` | LZMA compression of bytecode |
+| `--vm-debug` / `--no-vm-encode` | VM debug mode / skip VM string encoding |
+| `-o`, `--output <file>` | Output file path |
 
 ---
 
-## API Reference
+## API
 
 The Express server exposes two endpoints:
 
 ### `POST /api/validate`
 
-Validates Luau source code for syntax errors.
-
 ```json
-{
-  "code": "local x = 1 + 2"
-}
+{ "code": "local x = 1 + 2", "target": "luau" }
 ```
+
+Returns `{ valid, errors, warnings, stats, features, output }`.
 
 ### `POST /api/obfuscate`
 
-Obfuscates Luau source code with configurable options.
-
 ```json
 {
-  "code": "local function greet(name) print('Hello ' .. name) end",
+  "code": "local function greet(name) print('Hello ' .. name) end\ngreet('World')",
   "options": {
+    "target": "luau",
     "noRename": false,
     "noPreserve": false,
     "encodeStrings": true,
     "scramble": true,
     "oneLine": false,
     "vmType": "register",
-    "vmLevel": "normal"
+    "vmLevel": "maximum"
   }
 }
 ```
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `noRename` | `boolean` | `false` | Skip identifier renaming |
-| `noPreserve` | `boolean` | `false` | Don't preserve Roblox globals |
-| `encodeStrings` | `boolean` | `false` | Enable string encoding pass |
-| `scramble` | `boolean` | `false` | Enable control flow scrambling |
-| `oneLine` | `boolean` | `false` | Minify output to a single line |
-| `vmType` | `string` | `"none"` | VM type: `"none"`, `"stack"`, or `"register"` |
-| `vmLevel` | `string` | `"normal"` | Protection level: `"debug"`, `"normal"`, or `"maximum"` |
+| `target` | string | `"luau"` | Output target |
+| `noRename` | boolean | `false` | Skip identifier renaming |
+| `noPreserve` | boolean | `false` | Don't preserve Roblox/Lua globals |
+| `encodeStrings` | boolean | `false` | XOR-encode string literals |
+| `scramble` | boolean | `false` | Control-flow flattening + opaque predicates |
+| `oneLine` | boolean | `false` | Minify output |
+| `vmType` | string | `"none"` | `"none"` / `"stack"` / `"register"` |
+| `vmLevel` | string | `"normal"` | `"debug"` / `"normal"` / `"maximum"` |
 
 ---
 
 ## Programmatic Usage
 
 ```typescript
-import { lex, parse, obfuscate, printChunk } from "clyde";
-import { compile } from "clyde/vm/Compiler";
-import { generateVM } from "clyde/vm/vm-gen";
+import { lex, parse, obfuscate, printChunk } from "nevahex";
+import { compile as compileStack } from "nevahex/vm/Compiler";
+import { generateVM } from "nevahex/vm/vm-gen";
 
-// Basic obfuscation
-const { tokens } = lex('local x = "hello world"');
+// Direct obfuscation
+const { tokens } = lex("local x = 'hello world'");
 const ast = parse(tokens);
-const obfuscated = obfuscate(ast, { renameLocals: true, preserveGlobals: true });
-const output = printChunk(obfuscated);
+const obf = obfuscate(ast, { renameLocals: true, preserveGlobals: true, target: "luau" });
+console.log(printChunk(obf));
 
 // VM-protected obfuscation
-const bytecode = compile(obfuscated);
-const vmOutput = generateVM(bytecode, { level: "normal" });
+const bytecode = compileStack(obf, { target: "luau" });
+const output = generateVM(bytecode, { level: "maximum", target: "luau" });
 ```
 
 ---
 
-## How It Works
+## Architecture
 
-### 1. Lexer
+See [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) for the full pipeline, [docs/VM.md](./docs/VM.md) for opcode reference, and [docs/COMPATIBILITY.md](./docs/COMPATIBILITY.md) for the per-target feature matrix.
 
-The lexer tokenizes raw Luau source into a stream of typed tokens. It handles all Luau-specific syntax including:
-- Long strings and comments (`[==[...]==]`)
-- String interpolation (`` `Hello {name}` ``)
-- Type annotation tokens (`::`, `->`, `?`)
-- Compound operators (`+=`, `-=`, `*=`, etc.)
-
-### 2. Parser
-
-A hand-written recursive descent parser converts the token stream into a complete AST. It supports:
-- Full statement and expression grammar
-- Type annotations with generics (`Array<{key: string}>`)
-- If-else expressions (`if cond then a else b`)
-- Type function statements
-- Export type declarations
-
-### 3. Obfuscation Passes
-
-| Pass | Module | Description |
-|------|--------|-------------|
-| **Identifier Renaming** | `Obfuscator.ts` | Scope-aware renaming of local variables, function parameters, and loop variables. Preserves Roblox globals by default. |
-| **String Encoding** | `StringEncoder.ts` | Replaces string literals with XOR-encoded equivalents and injects runtime decoding logic. |
-| **Control Flow Scrambling** | `ControlFlowScrambler.ts` | Restructures linear control flow into dispatch-table loops with opaque predicates. |
-
-### 4. Virtual Machines
-
-The VM layer compiles the obfuscated AST into bytecode and wraps it in a self-contained Luau script that executes at runtime:
-
-| Architecture | Compiler | Generator | Key Traits |
-|-------------|----------|-----------|------------|
-| **Stack-Based** | `Compiler.ts` | `vm-gen.ts` | Push/pop operand stack, simpler instruction set |
-| **Register-Based** | `RegCompiler.ts` | `reg-vm-gen.ts` | Register allocation, fewer instructions, polymorphic dispatch |
-
-Both VMs support three protection levels:
-
-- **Debug** — Readable output with named opcodes for development
-- **Normal** — Shuffled opcode mapping, encoded constants, flattened control flow
-- **Maximum** — Full polymorphic dispatch, LZMA-compressed bytecode, anti-tamper checks
+```
+Source ─▶ Lexer ─▶ Parser ─▶ AST ─▶ Obfuscation Passes ─▶ Compiler ─▶ Bytecode
+                                                                 │
+                                                  ┌──────────────┴──────────────┐
+                                                  ▼                              ▼
+                                            Stack VM IR                  Register VM IR
+                                                  │                              │
+                                                  └──────────────┬───────────────┘
+                                                                 ▼
+                                                  Code Generator (handlers + dispatch)
+                                                                 ▼
+                                                  Multi-Layer Cipher (SBox + XOR + base85)
+                                                                 ▼
+                                                  Custom Bootstrap (anti-tamper + watermark)
+                                                                 ▼
+                                                  Self-Contained Luau/Lua Script
+```
 
 ---
 
-## Star History
+## Roblox Luau & Executor Compatibility
 
-<a href="https://star-history.com/#sfr-development/Clyde-Luau-Obfuscator&Date">
- <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=sfr-development/Clyde-Luau-Obfuscator&type=Date&theme=dark" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=sfr-development/Clyde-Luau-Obfuscator&type=Date" />
-   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=sfr-development/Clyde-Luau-Obfuscator&type=Date" />
- </picture>
-</a>
+NEVAHEX emits a runtime polyfill block that:
+
+- detects the host environment (vanilla Lua, PUC-Rio, Luau, Roblox, executor),
+- provides `bit32` shims for Lua 5.1 (where the library is absent),
+- polyfills common Roblox services when missing (using a defensive `__index` chain),
+- provides safe no-op fallbacks for executor-only APIs (`hookfunction`, `Drawing`, `syn.*`, …) so obfuscated code does not throw when those APIs are unavailable,
+- normalises `loadstring` vs `load` (Lua 5.4 removed `loadstring`),
+- prints a one-line `[NEVAHEX v1.0] target=<...> executor=<...>` banner at startup (disable with `--no-banner`).
+
+See [docs/EXECUTOR.md](./docs/EXECUTOR.md) for the full list of probed globals and how to extend.
+
+---
+
+## Testing
+
+```bash
+npm test
+```
+
+The test suite covers the lexer, parser, both VMs, closure/upvalue semantics, varargs, tables, metamethods, loops, calls, control flow, all obfuscation passes, all five target grammars, and a simulated Roblox executor environment.
 
 ---
 
 ## License
 
-This project is licensed under the [MIT License](./LICENSE).
+MIT. See [LICENSE](./LICENSE). Derived from Clyde-Luau-Obfuscator (also MIT). See [THIRD_PARTY.md](./THIRD_PARTY.md).

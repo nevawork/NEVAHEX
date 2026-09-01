@@ -7,6 +7,11 @@ import type {
   IfStatement,
   WhileStatement,
   RepeatStatement,
+  LocalStatement,
+  AssignmentStatement,
+  Identifier,
+  NumberLiteral,
+  BooleanLiteral,
 } from "../ast/types.js";
 import type { SourceLocation } from "../tokens.js";
 
@@ -51,7 +56,7 @@ function wrapWithOpaque(condition: Expression, loc: SourceLocation, seed: number
   };
 }
 
-function transformExpression(exp: Expression, seed: { value: number }): Expression {
+function transformExpression(exp: Expression, seed: { value: number }, flatten: boolean = true): Expression {
   if (exp.type === "BinaryExpression") {
     return {
       ...exp,
@@ -99,7 +104,7 @@ function transformExpression(exp: Expression, seed: { value: number }): Expressi
   if (exp.type === "FunctionExpression") {
     return {
       ...exp,
-      body: exp.body.map((s) => transformStatement(s, seed)),
+      body: exp.body.map((s) => transformStatement(s, seed, flatten)),
     };
   }
   if (exp.type === "ParenExpression") {
@@ -134,7 +139,8 @@ function transformExpression(exp: Expression, seed: { value: number }): Expressi
 
 function transformStatement(
   stmt: Statement | LastStatement,
-  seed: { value: number }
+  seed: { value: number },
+  flatten: boolean = true
 ): Statement | LastStatement {
   switch (stmt.type) {
     case "IfStatement": {
@@ -147,7 +153,7 @@ function transformStatement(
       return {
         ...stmt,
         condition: newCondition,
-        thenBody: stmt.thenBody.map((s) => transformStatement(s, seed)),
+        thenBody: stmt.thenBody.map((s) => transformStatement(s, seed, flatten)),
         elseifClauses: stmt.elseifClauses.map((c) => {
           seed.value++;
           return {
@@ -156,10 +162,10 @@ function transformStatement(
               c.condition.loc,
               seed.value
             ),
-            body: c.body.map((s) => transformStatement(s, seed)),
+            body: c.body.map((s) => transformStatement(s, seed, flatten)),
           };
         }),
-        elseBody: stmt.elseBody?.map((s) => transformStatement(s, seed)),
+        elseBody: stmt.elseBody?.map((s) => transformStatement(s, seed, flatten)),
       };
     }
     case "WhileStatement": {
@@ -171,14 +177,14 @@ function transformStatement(
           stmt.condition.loc,
           seed.value
         ),
-        body: stmt.body.map((s) => transformStatement(s, seed)),
+        body: stmt.body.map((s) => transformStatement(s, seed, flatten)),
       };
     }
     case "RepeatStatement": {
       seed.value++;
       return {
         ...stmt,
-        body: stmt.body.map((s) => transformStatement(s, seed)),
+        body: stmt.body.map((s) => transformStatement(s, seed, flatten)),
         condition: wrapWithOpaque(
           transformExpression(stmt.condition, seed),
           stmt.condition.loc,
@@ -237,13 +243,13 @@ function transformStatement(
         start: transformExpression(stmt.start, seed),
         end: transformExpression(stmt.end, seed),
         step: stmt.step ? transformExpression(stmt.step, seed) : undefined,
-        body: stmt.body.map((s) => transformStatement(s, seed)),
+        body: stmt.body.map((s) => transformStatement(s, seed, flatten)),
       };
     case "ForInStatement":
       return {
         ...stmt,
         iter: stmt.iter.map((e) => transformExpression(e, seed)),
-        body: stmt.body.map((s) => transformStatement(s, seed)),
+        body: stmt.body.map((s) => transformStatement(s, seed, flatten)),
       };
     case "LocalFunctionStatement":
     case "FunctionStatement":
@@ -251,12 +257,12 @@ function transformStatement(
     case "ExportTypeFunctionStatement":
       return {
         ...stmt,
-        body: stmt.body.map((s) => transformStatement(s, seed)),
+        body: stmt.body.map((s) => transformStatement(s, seed, flatten)),
       };
     case "DoStatement":
       return {
         ...stmt,
-        body: stmt.body.map((s) => transformStatement(s, seed)),
+        body: stmt.body.map((s) => transformStatement(s, seed, flatten)),
       };
     default:
       return stmt;
@@ -268,6 +274,96 @@ export interface ControlFlowScramblerOptions {
   seed?: number;
 
   enabled?: boolean;
+
+  flatten?: boolean;
+}
+
+function flattenBlock(stmts: (Statement | LastStatement)[], seed: { value: number }, loc: SourceLocation): (Statement | LastStatement)[] {
+  if (stmts.length < 3) return stmts;
+
+  const breaks: { [k: number]: boolean } = {};
+  const continues: { [k: number]: boolean } = {};
+  const returns: { [k: number]: boolean } = {};
+  for (let i = 0; i < stmts.length; i++) {
+    const s = stmts[i]!;
+    if (s.type === "BreakStatement") breaks[i] = true;
+    if (s.type === "ContinueStatement") continues[i] = true;
+    if (s.type === "ReturnStatement") returns[i] = true;
+  }
+  if (Object.keys(breaks).length || Object.keys(continues).length || Object.keys(returns).length) {
+    return stmts;
+  }
+
+  const stateName = `_nh_st_${(seed.value++).toString(36)}_${Math.floor(Math.random() * 0xFFFF).toString(36)}`;
+  const initial = Math.floor(Math.random() * 1000) + 1;
+  const states: number[] = [];
+  const stmtsList: (Statement | LastStatement)[][] = [];
+  for (let i = 0; i < stmts.length; i += 2) {
+    states.push(states.length + 1);
+    stmtsList.push(stmts.slice(i, Math.min(i + 2, stmts.length)));
+  }
+
+  const newStmts: (Statement | LastStatement)[] = [];
+  newStmts.push({
+    type: "LocalStatement",
+    vars: [{ name: stateName }],
+    values: [{ type: "NumberLiteral", value: String(initial), loc }],
+    loc,
+  } as LocalStatement);
+  newStmts.push({
+    type: "WhileStatement",
+    condition: { type: "BooleanLiteral", value: true, loc },
+    body: [
+      {
+        type: "IfStatement",
+        condition: { type: "BooleanLiteral", value: true, loc },
+        thenBody: stmtsList.map((chunk, idx) => {
+          const s = states[idx]!;
+          const nextS = idx + 1 < states.length ? states[idx + 1]! : -1;
+          const assign = {
+            type: "AssignmentStatement",
+            vars: [{ type: "Identifier", name: stateName, loc }],
+            values: [{ type: "NumberLiteral", value: String(nextS), loc }],
+            loc,
+          } as AssignmentStatement;
+          return {
+            type: "IfStatement",
+            condition: {
+              type: "BinaryExpression",
+              operator: "==",
+              left: { type: "Identifier", name: stateName, loc },
+              right: { type: "NumberLiteral", value: String(s), loc },
+              loc,
+            },
+            thenBody: [...chunk, assign],
+            elseifClauses: [],
+            elseBody: undefined,
+            loc,
+          } as IfStatement;
+        }),
+        elseifClauses: [],
+        elseBody: undefined,
+        loc,
+      } as IfStatement,
+      {
+        type: "IfStatement",
+        condition: {
+          type: "BinaryExpression",
+          operator: ">",
+          left: { type: "Identifier", name: stateName, loc },
+          right: { type: "NumberLiteral", value: String(states.length), loc },
+          loc,
+        },
+        thenBody: [{ type: "BreakStatement", loc } as any],
+        elseifClauses: [],
+        elseBody: undefined,
+        loc,
+      } as IfStatement,
+    ],
+    loc,
+  } as any);
+
+  return newStmts;
 }
 
 export function scrambleControlFlow(
@@ -276,11 +372,12 @@ export function scrambleControlFlow(
 ): Chunk {
   const enabled = options.enabled !== false;
   const seed = { value: options.seed ?? 0 };
+  const flatten = options.flatten !== false;
 
   if (!enabled) return ast;
 
   return {
     ...ast,
-    body: ast.body.map((s) => transformStatement(s, seed)),
+    body: ast.body.map((s) => transformStatement(s, seed, flatten)),
   };
 }

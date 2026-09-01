@@ -81,7 +81,7 @@ function obfuscateNum(n: number, rng: () => number): string {
 }
 
 export function generateBootstrap(config: BootstrapConfig): string {
-  const { vmBlob, vmOrigLen, xorKey, invSbox, checksum, chunkName = "Clyde", rng } = config;
+  const { vmBlob, vmOrigLen, xorKey, invSbox, checksum, chunkName = "NEVAHEX", rng } = config;
 
   const prefixes = ["_0", "_1", "_2", "_3", "_4", "_5"];
   const suffixes = "abcdefghjkmnpqrstuvwx".split('');
@@ -158,10 +158,10 @@ export function generateBootstrap(config: BootstrapConfig): string {
 
   {
     const builtins: [string, string][] = [
-      [nByte, 'string.byte'], [nGsub, 'string.gsub'], [nPack, 'string.pack'],
-      [nSub, 'string.sub'], [nChar, 'string.char'], [nLoad, 'loadstring'],
-      [nAssert, 'assert'], [nType, 'type'], [nBxor, 'bit32.bxor'],
-      [nPcall, 'pcall'], [nTconcat, 'table.concat'], [nBand, 'bit32.band'],
+      [nByte, 'string.byte'], [nGsub, 'string.gsub'],
+      [nSub, 'string.sub'], [nChar, 'string.char'],
+      [nAssert, 'assert'], [nType, 'type'],
+      [nPcall, 'pcall'], [nTconcat, 'table.concat'],
     ];
     shuffle(builtins, rng);
     let bi = 0;
@@ -172,6 +172,9 @@ export function generateBootstrap(config: BootstrapConfig): string {
       fragments.push({ code: `local ${names}=${values}`, layer: 0 });
       bi += groupSize;
     }
+    fragments.push({ code: `local ${nLoad}=type(loadstring)=="function" and loadstring or load`, layer: 0 });
+    fragments.push({ code: `local ${nPack}=function(v) local a,b,c2,d=math.floor(v/16777216)%256,math.floor(v/65536)%256,math.floor(v/256)%256,v%256;return ${nChar}(a,b,c2,d) end`, layer: 0 });
+    fragments.push({ code: `if type(bit32)=="table" then else local _B={bxor=function(a,b) local r=0;for i=0,31 do local x,y=((a//(2^i))%2),((b//(2^i))%2);if (x+y)%2==1 then r=r+(2^i) end end;return r end,band=function(a,b) local r=0;for i=0,31 do if ((a//(2^i))%2==1) and ((b//(2^i))%2==1) then r=r+(2^i) end end;return r end,bor=function(a,b) local r=0;for i=0,31 do if ((a//(2^i))%2==1) or ((b//(2^i))%2==1) then r=r+(2^i) end end;return r end,lrotate=function(a,d) d=d%32;if d<0 then d=d+32 end;return ((a<<d)|(a>>(32-d)))&0xFFFFFFFF end,lshift=function(a,d) return (a<<d)&0xFFFFFFFF end,rshift=function(a,d) return a>>d end};bit32=_B end;local ${nBxor}=bit32.bxor;local ${nBand}=bit32.band`, layer: 0 });
   }
 
   const nDbgRef = N();
@@ -404,7 +407,7 @@ export function generateBootstrap(config: BootstrapConfig): string {
   ].join('\n') });
 
   cases.push({ id: stExec, code: [
-    `${nAssert}(${nOk} and ${nFn} and ${nType}(${nFn})=="function","Clyde Protection v2")`,
+    `${nAssert}(${nOk} and ${nFn} and ${nType}(${nFn})=="function","NEVAHEX Protection v1")`,
     `${nResult}=${nFn}(...)`,
 
     `for _0i=1,256 do ${nSbox}[_0i]=0 end`,

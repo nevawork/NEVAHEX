@@ -4,6 +4,7 @@ import { randomBytes } from "crypto";
 import { writeFileSync as _dumpWrite } from "fs";
 import { encryptAndEncode, compressToBase85, compressBytesToBase85 } from "./lzma.js";
 import { generateBootstrap } from "./bootstrap-template.js";
+import { DEFAULT_TARGET, isValidTarget, type Target } from "../targets.js";
 
 export type RegVMLevel = "debug" | "normal" | "max";
 
@@ -35,7 +36,7 @@ export interface RegVMGenOptions {
   debugTrace?: boolean;
   _noWatermark?: boolean;
 
-  target?: string;
+  target?: Target;
 }
 
 interface BuildCtx {
@@ -141,6 +142,71 @@ function rng(): number {
 let _nameCounter = 0;
 
 function resetNames(): void { _nameCounter = 0; }
+
+function generateRegCompatPolyfill(target: Target): string {
+  const lines: string[] = [];
+  const N = (n: string) => `nh_${n}_${Math.floor(rng() * 0xFFFF).toString(36)}`;
+  const tg = N("tgt");
+  const execN = N("exec");
+  lines.push(`local ${tg}="${target}"`);
+  lines.push(`local ${execN}="unknown"`);
+  lines.push(`if type(game)~="nil" and typeof and typeof(game)~="nil" then ${execN}="roblox" end`);
+  lines.push(`if type(syn)~="table" then ${execN}="synapse" end`);
+  lines.push(`if type(fluxus)~="table" then ${execN}="fluxus" end`);
+  lines.push(`if type(identifyexecutor)=="function" then local _n=identifyexecutor();if type(_n)=="string" then ${execN}=_n end end`);
+
+  const bit32n = N("b32");
+  lines.push(`if type(bit32)=="table" then bit32=bit32`);
+  lines.push(`else`);
+  lines.push(`  local ${bit32n}={}`);
+  lines.push(`  function ${bit32n}.bxor(a,b) local r=0;for i=0,31 do local x,y=((a//(2^i))%2),((b//(2^i))%2);if (x+y)%2==1 then r=r+(2^i) end end;return r end`);
+  lines.push(`  function ${bit32n}.band(a,b) local r=0;for i=0,31 do if ((a//(2^i))%2==1) and ((b//(2^i))%2==1) then r=r+(2^i) end end;return r end`);
+  lines.push(`  function ${bit32n}.bor(a,b) local r=0;for i=0,31 do if ((a//(2^i))%2==1) or ((b//(2^i))%2==1) then r=r+(2^i) end end;return r end`);
+  lines.push(`  function ${bit32n}.lrotate(a,disp) disp=disp%32;if disp<0 then disp=disp+32 end;return ((a<<disp)|(a>>(32-disp)))&0xFFFFFFFF end`);
+  lines.push(`  function ${bit32n}.lshift(a,disp) return (a<<disp)&0xFFFFFFFF end`);
+  lines.push(`  function ${bit32n}.rshift(a,disp) return a>>disp end`);
+  lines.push(`  bit32=${bit32n}`);
+  lines.push(`end`);
+  lines.push(`if type(table.create)~="function" then table.create=function(n,v) local t={};for _i=1,n do t[_i]=v end;return t end end`);
+  lines.push(`if type(table.pack)~="function" then table.pack=function(...) return {n=select("#",...),...} end end`);
+  lines.push(`if type(string.pack)~="function" or not pcall(string.pack,">I4",0) then`);
+  lines.push(`  local _orig_unpack=string.unpack;`);
+  lines.push(`  string.pack=function(fmt,...) local args={...};local n=select("#",...);local out={};local ai=1;local fi=1;`);
+  lines.push(`    while fi<=#fmt do local c=string.sub(fmt,fi,fi);fi=fi+1;`);
+  lines.push(`      if c==">" or c=="<" or c=="!" or c=="x" or c=="X" or c=="=" then elseif c=="I" then local sz=4;if string.sub(fmt,fi,fi)=="4" then fi=fi+1 end;local v=assert(args[ai],"missing arg");ai=ai+1;local a,b,c2,d;v=math.floor(v);if c==">" or c=="!" then a=math.floor(v/16777216)%256;b=math.floor(v/65536)%256;c2=math.floor(v/256)%256;d=v%256 else d=math.floor(v/16777216)%256;c2=math.floor(v/65536)%256;b=math.floor(v/256)%256;a=v%256 end;out[#out+1]=string.char(a,b,c2,d)elseif c=="B" then local v=assert(args[ai],"missing arg");ai=ai+1;out[#out+1]=string.char(v%256)elseif c=="b" then local v=assert(args[ai],"missing arg");ai=ai+1;out[#out+1]=string.char((v%256+256)%256)end end;`);
+  lines.push(`    return table.concat(out) end;`);
+  lines.push(`  string.unpack=_orig_unpack or function(s,fmt) return string.byte(s,1),2 end;`);
+  lines.push(`  string.packsize=string.packsize or function(fmt) local n=0;for i=1,#fmt do local c=string.sub(fmt,i,i);if c=="I" or c=="i" then n=n+4 end end;return n end;`);
+  lines.push(`end`);
+
+  if (target === "lua54") {
+    const lsn = N("ls");
+    lines.push(`if type(loadstring)~="function" then _G.loadstring=load end`);
+  }
+
+  const safeApiN = N("safe");
+  const k1 = N("k");
+  const v1 = N("v");
+  lines.push(`local ${safeApiN}={}`);
+  lines.push(`function ${safeApiN}.hookfunction(f,r) return r end`);
+  lines.push(`function ${safeApiN}.hookmetamethod(t,k,f) return f end`);
+  lines.push(`function ${safeApiN}.newcclosure(f) return f end`);
+  lines.push(`function ${safeApiN}.getrawmetatable(t) local mt=getmetatable(t);if type(mt)=="table" and mt.__metatable then return nil end;return mt end`);
+  lines.push(`function ${safeApiN}.isreadonly(t) return false end`);
+  lines.push(`function ${safeApiN}.makewriteable(t) return t end`);
+  lines.push(`function ${safeApiN}.checkcaller() return false end`);
+  lines.push(`function ${safeApiN}.cloneref(r) return r end`);
+  lines.push(`function ${safeApiN}.getconnections() return {} end`);
+  lines.push(`function ${safeApiN}.getgc() return {} end`);
+  lines.push(`function ${safeApiN}.getinstances() return {} end`);
+  lines.push(`function ${safeApiN}.getscripts() return {} end`);
+  lines.push(`function ${safeApiN}.readfile() return nil end`);
+  lines.push(`function ${safeApiN}.writefile() return false end`);
+  lines.push(`function ${safeApiN}.isfile() return false end`);
+  lines.push(`function ${safeApiN}.makefolder() return false end`);
+  lines.push(`for ${k1},${v1} in pairs(${safeApiN}) do if rawget(_G,${k1})==nil then rawset(_G,${k1},${v1}) end end`);
+  return lines.join("\n");
+}
 
 function randomName(len: number = 6): string {
 
@@ -3438,7 +3504,10 @@ export function generateRegVM(chunk: RegBytecodeChunk, options: RegVMGenOptions 
     const builtinCaps = buildBuiltinCaptures(ctx);
     const envSetup = buildEnvSetup(ctx);
     const vmRuntime = buildVMRuntime(ctx);
+    const regTarget: Target = isValidTarget(options.target || "") ? (options.target as Target) : DEFAULT_TARGET;
     const parts: string[] = [];
+    parts.push(`--[[ NEVAHEX target=${regTarget} ]]`);
+    parts.push(generateRegCompatPolyfill(regTarget));
     parts.push(builtinCaps.code);
     parts.push(envSetup);
     parts.push(vmRuntime);
@@ -3679,7 +3748,7 @@ export function generateRegVM(chunk: RegBytecodeChunk, options: RegVMGenOptions 
       xorKey,
       invSbox,
       checksum,
-      chunkName: "Clyde",
+      chunkName: "NEVAHEX",
       rng,
     });
     console.log(`[RegVM] Blob: final output = ${output.length} chars`);
@@ -3687,14 +3756,14 @@ export function generateRegVM(chunk: RegBytecodeChunk, options: RegVMGenOptions 
 
   if (!options._noWatermark) {
     const art = [
-      `_________ .__            .___       __________                __                 __  .__                ____   ____________  `,
-      `\\_   ___ \\|  | ___.__. __| _/____   \\______   \\_______  _____/  |_  ____   _____/  |_|__| ____   ____   \\   \\ /   /\\_____  \\ `,
-      `/    \\  \\/|  |<   |  |/ __ |/ __ \\   |     ___/\\_  __ \\/  _ \\   __\\/ __ \\_/ ___\\   __\\  |/  _ \\ /    \\   \\   Y   /  /  ____/ `,
-      `\\     \\___|  |_\\___  / /_/ \\  ___/   |    |     |  | \\(  <_> )  | \\  ___/\\  \\___|  | |  (  <_> )   |  \\   \\     /  /       \\ `,
-      ` \\______  /____/ ____\\____ |\\___  >  |____|     |__|   \\____/|__|  \\___  >\\___  >__| |__|\\____/|___|  /    \\___/   \\_______ \\`,
-      `        \\/     \\/         \\/    \\/                                     \\/     \\/                    \\/                     \\/`,
+      `___   ___  ________  _________  ________  ________  _______      ___    ___ `,
+      `\\  \\ /  / |\\   __  \\|\\___   ___\\\\   __  \\|\\   __  \\|\\  ___ \\    |\\  \\  /  /|`,
+      ` \\  V  /  \\ \\  \\|\\  \\|___ \\  \\_\\ \\  \\|\\  \\ \\  \\|\\  \\ \\   __/|   \\ \\  \\/  / /`,
+      ` /   /  / \\ \\   __  \\   \\ \\  \\  \\ \\   _  _\\ \\   __  \\ \\  \\_|/__  \\ \\    / / `,
+      `/   /__/   \\ \\  \\ \\  \\   \\ \\  \\  \\ \\  \\\\  \\\\ \\  \\ \\  \\ \\  \\_|\\ \\  /     \\/  `,
+      `\\________/\\__\\__\\__\\__\\__\\__\\__\\__\\__\\______\\__\\______\\_______\\/___________/`,
       ``,
-      `https://clydeprotectionde.cloud | ClydeProtection Just like VMProtect, but for Lua.`,
+      `https://nevahex.dev | NEVAHEX Multi-Target Lua/Luau Protection - VM-grade bytecode for Lua 5.1-5.4 and Roblox Luau`,
     ];
     output = `--[[\n${art.join('\n')}\n]]\n` + output;
   }

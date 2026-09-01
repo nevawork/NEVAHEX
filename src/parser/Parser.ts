@@ -35,6 +35,9 @@ import type {
   ReturnType,
   GenericTypeListWithDefaults,
   Attribute,
+  GotoStatement,
+  LabelStatement,
+  LocalAttribute,
 } from "../ast/types.js";
 import { parseType, parseReturnType, parseGenericTypeListWithDefaults } from "./TypeParser.js";
 
@@ -45,11 +48,12 @@ const BINARY_PRECEDENCE: Record<string, number> = {
   "..": 4,
   "+": 5, "-": 5,
   "*": 6, "/": 6, "//": 6, "%": 6,
+  "&": 6, "|": 6, "~": 6, "<<": 6, ">>": 6,
   "^": 7,
 };
 
 const BLOCK_END_KEYWORDS = new Set(["end", "else", "elseif", "until"]);
-const COMPOUND_OPS = new Set(["+=" , "-=", "*=", "/=", "//=", "%=", "^=", "..="]);
+const COMPOUND_OPS = new Set(["+=" , "-=", "*=", "/=", "//=", "%=", "^=", "..=", "&=", "|=", "<<=", ">>="]);
 
 export class Parser {
   private tokens: Token[];
@@ -152,6 +156,17 @@ export class Parser {
     if (this.check("Keyword", "return")) return this.parseReturn();
     if (this.check("Keyword", "break")) return this.parseBreak();
     if (this.check("Identifier", "continue") && this.isContinueStatement()) return this.parseContinue();
+    if (this.check("Keyword", "goto")) return this.parseGoto();
+
+    if (this.check("Punctuator", "::")) {
+      const next = this.tokens[this.pos + 1];
+      if (next && next.type === "Identifier") {
+        const next2 = this.tokens[this.pos + 2];
+        if (next2 && next2.type === "Punctuator" && (next2 as any).value === "::") {
+          return this.parseLabel();
+        }
+      }
+    }
 
     if (this.check("Keyword", "local")) return this.parseLocalOrLocalFunction();
     if (this.check("Keyword", "do")) return this.parseDo();
@@ -179,6 +194,13 @@ export class Parser {
         return this.parseTypeOrTypeFunction();
       }
 
+    }
+    if (this.check("Identifier") && (this.peek() as any).value === "const") {
+
+      const next = this.tokens[this.pos + 1];
+      if (next && next.type === "Identifier") {
+        return this.parseConstDeclaration();
+      }
     }
     if (this.check("Keyword", "export")) return this.parseExportOrTypeStatement();
     if (!this.check("Identifier") && !this.check("Punctuator", "(")) {
@@ -321,16 +343,73 @@ export class Parser {
     return { type: "ContinueStatement", loc: this.mergeLoc(loc) };
   }
 
-  private parseBinding(): { name: string; type?: Type } | null {
+  private parseGoto(): GotoStatement {
+    const start = this.loc();
+    this.consume();
+    const nameTok = this.expect("Identifier");
+    if (!nameTok) {
+      return { type: "GotoStatement", label: "", loc: this.mergeLoc(start) };
+    }
+    return { type: "GotoStatement", label: (nameTok as any).value, loc: this.mergeLoc(start) };
+  }
+
+  private parseLabel(): LabelStatement {
+    const start = this.loc();
+    this.consume();
+    const nameTok = this.expect("Identifier");
+    if (!nameTok) {
+      return { type: "LabelStatement", name: "", loc: this.mergeLoc(start) };
+    }
+    const name = (nameTok as any).value;
+    const close = this.expect("Punctuator", "::");
+    if (!close) {
+      return { type: "LabelStatement", name, loc: this.mergeLoc(start) };
+    }
+    return { type: "LabelStatement", name, loc: this.mergeLoc(start) };
+  }
+
+  private parseConstDeclaration(): LocalStatement | null {
+    const start = this.loc();
+    this.consume();
+    const vars: { name: string; type?: Type; attribute?: LocalAttribute }[] = [];
+    do {
+      const binding = this.parseBinding();
+      if (!binding) return null;
+      binding.attribute = binding.attribute ?? "const";
+      vars.push(binding);
+      if (!this.check("Punctuator", ",")) break;
+      this.consume();
+    } while (true);
+    let values: Expression[] | undefined;
+    if (this.check("Punctuator", "=")) {
+      this.consume();
+      values = this.parseExpList();
+    }
+    return { type: "LocalStatement", vars, values, prefix: "const", loc: this.mergeLoc(start) };
+  }
+
+  private parseBinding(): { name: string; type?: Type; attribute?: LocalAttribute } | null {
     const id = this.expect("Identifier");
     if (!id) return null;
     const name = (id as any).value;
     let type: Type | undefined;
+    let attribute: LocalAttribute | undefined;
+    if (this.check("Punctuator", "<")) {
+      this.consume();
+      const attrTok = this.expect("Identifier");
+      if (attrTok) {
+        const attrName = (attrTok as any).value as string;
+        if (attrName === "const" || attrName === "close") {
+          attribute = attrName;
+        }
+      }
+      this.expect("Punctuator", ">");
+    }
     if (this.check("Punctuator", ":")) {
       this.consume();
       type = this.parseTypeInContext() ?? undefined;
     }
-    return { name, type };
+    return { name, type, attribute };
   }
 
   private parseLocalOrLocalFunction(): Statement | null {
@@ -352,7 +431,7 @@ export class Parser {
         loc: this.mergeLoc(start),
       };
     }
-    const vars: { name: string; type?: Type }[] = [];
+    const vars: { name: string; type?: Type; attribute?: LocalAttribute }[] = [];
     do {
       const binding = this.parseBinding();
       if (!binding) return null;
@@ -831,6 +910,11 @@ export class Parser {
       const arg = this.parseExpression(6);
       if (!arg) return null;
       left = { type: "UnaryExpression", operator: "#", argument: arg, loc: this.mergeLoc(arg.loc) };
+    } else if (t.type === "Punctuator" && t.value === "~") {
+      this.consume();
+      const arg = this.parseExpression(6);
+      if (!arg) return null;
+      left = { type: "UnaryExpression", operator: "~", argument: arg, loc: this.mergeLoc(arg.loc) };
     } else {
       left = this.parseAsexp();
     }
@@ -856,6 +940,13 @@ export class Parser {
     const exp = this.parseSimpleExp();
     if (!exp) return null;
     if (this.check("Punctuator", "::")) {
+
+      const next = this.tokens[this.pos + 1];
+      const nextNext = this.tokens[this.pos + 2];
+      if (next && next.type === "Identifier" && nextNext && nextNext.type === "Punctuator" && (nextNext as any).value === "::") {
+
+        return exp;
+      }
       this.consume();
       const assertedType = this.parseTypeInContext();
       if (!assertedType) return exp;

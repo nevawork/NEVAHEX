@@ -9,6 +9,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const optOneLine = document.getElementById("opt-oneline");
   const optVmType = document.getElementById("opt-vm-type");
   const optVmLevel = document.getElementById("opt-vm-level");
+  const optTarget = document.getElementById("opt-target");
   
   const btnObfuscate = document.getElementById("btn-obfuscate");
   const btnCopy = document.getElementById("btn-copy");
@@ -93,7 +94,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const response = await fetch("/api/validate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code }),
+        body: JSON.stringify({ code, target: optTarget.value }),
       });
 
       if (!response.ok) {
@@ -155,6 +156,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const payload = {
       code,
       options: {
+        target: optTarget.value,
         noRename: !optRename.checked,
         noPreserve: !optPreserve.checked,
         encodeStrings: optEncode.checked,

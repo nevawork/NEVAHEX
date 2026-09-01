@@ -26,7 +26,9 @@ export type Statement =
   | TypeStatement
   | ExportTypeStatement
   | TypeFunctionStatement
-  | ExportTypeFunctionStatement;
+  | ExportTypeFunctionStatement
+  | GotoStatement
+  | LabelStatement;
 
 export type LastStatement =
   | ReturnStatement
@@ -114,9 +116,22 @@ export interface LocalFunctionStatement extends BaseNode {
 
 export interface LocalStatement extends BaseNode {
   type: "LocalStatement";
-  vars: { name: string; type?: Type }[];
+  vars: { name: string; type?: Type; attribute?: LocalAttribute }[];
   values?: Expression[];
+  prefix?: "local" | "const";
 }
+
+export interface GotoStatement extends BaseNode {
+  type: "GotoStatement";
+  label: string;
+}
+
+export interface LabelStatement extends BaseNode {
+  type: "LabelStatement";
+  name: string;
+}
+
+export type LocalAttribute = "const" | "close";
 
 export interface TypeStatement extends BaseNode {
   type: "TypeStatement";

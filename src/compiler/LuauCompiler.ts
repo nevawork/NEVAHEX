@@ -2,6 +2,7 @@ import { lex } from "../lexer/Lexer.js";
 import { parseWithErrors } from "../parser/Parser.js";
 import { printChunk } from "../obfuscator/Printer.js";
 import type { Chunk, Statement, LastStatement, Expression } from "../ast/types.js";
+import { DEFAULT_TARGET, featuresFor, isValidTarget, type Target } from "../targets.js";
 
 export interface ValidationError {
   message: string;
@@ -316,8 +317,10 @@ function detectFeatures(body: (Statement | LastStatement)[]): Set<string> {
   return features;
 }
 
-export function validate(source: string): ValidationResult {
+export function validate(source: string, target: string = DEFAULT_TARGET): ValidationResult {
   const errors: ValidationError[] = [];
+  const tgt: Target = isValidTarget(target) ? target : DEFAULT_TARGET;
+  const features = featuresFor(tgt);
 
   const lexResult = lex(source);
   if (lexResult.errors.length > 0) {
@@ -356,19 +359,41 @@ export function validate(source: string): ValidationResult {
   }
 
   const globals = collectGlobals(ast.body);
-  const features = detectFeatures(ast.body);
+  const detectedFeatures = detectFeatures(ast.body);
   const stmtCount = countStatements(ast.body);
   const funcCount = countFunctions(ast.body);
   const localCount = countLocals(ast.body);
 
+
+  const featureWarnings: { feature: string; required: string }[] = [
+    { feature: "bitwise-operators", required: "bitwiseOps" },
+    { feature: "integers", required: "integers" },
+    { feature: "goto", required: "goto" },
+    { feature: "to-be-closed", required: "toBeClosed" },
+    { feature: "const-attribute", required: "constAttribute" },
+    { feature: "continue", required: "hasContinue" },
+    { feature: "compound-assign", required: "compoundAssign" },
+    { feature: "string-interpolation", required: "stringInterpolation" },
+    { feature: "type-annotations", required: "typeAnnotations" },
+    { feature: "if-else-expr", required: "ifElseExpression" },
+  ];
+  for (const fw of featureWarnings) {
+    if (detectedFeatures.has(fw.feature) && !(features as any)[fw.required]) {
+      errors.push({
+        message: `Feature '${fw.feature}' used in source is not supported in target '${tgt}'`,
+        severity: "warning",
+      });
+    }
+  }
+
   const knownGlobals = new Set([
-    "_G", "true", "false", "nil", "self", "_VERSION",
+    "_G", "true", "false", "nil", "self", "_VERSION", "_ENV", "shared",
     "print", "warn", "error", "assert", "type", "typeof", "tostring", "tonumber",
     "pcall", "xpcall", "select", "unpack", "pairs", "ipairs", "next",
     "rawget", "rawset", "rawequal", "rawlen", "setmetatable", "getmetatable",
     "loadstring", "load", "require", "getfenv", "setfenv", "newproxy",
     "string", "table", "math", "bit32", "coroutine", "os", "debug", "utf8", "buffer",
-    "tick", "time", "wait", "spawn", "delay", "task", "shared", "settings", "stats",
+    "tick", "time", "wait", "spawn", "delay", "task", "settings", "stats",
     "UserSettings", "version",
     "game", "workspace", "script", "plugin",
     "Instance", "Vector3", "Vector2", "CFrame", "Color3", "BrickColor",
@@ -377,7 +402,7 @@ export function validate(source: string): ValidationResult {
     "RaycastParams", "OverlapParams", "Axes", "Faces",
     "PhysicalProperties", "PathWaypoint", "NumberSequenceKeypoint", "ColorSequenceKeypoint",
     "DockWidgetPluginGuiInfo", "CatalogSearchParams", "Font",
-    "Players", "Workspace", "Lighting", "ReplicatedStorage", "ServerStorage",
+    "Players", "Lighting", "ReplicatedStorage", "ServerStorage",
     "ServerScriptService", "StarterGui", "StarterPlayer", "StarterPack",
     "UserInputService", "TweenService", "HttpService", "MarketplaceService",
     "RunService", "TeleportService", "GuiService", "ContextActionService",
@@ -415,13 +440,15 @@ export function validate(source: string): ValidationResult {
     "waxwritefile", "waxreadfile", "waxgetcustomasset", "getsynasset",
     "get_signal_cons", "Clipboard", "everyClipboard",
     "Rayfield", "OrionLib", "Fluent", "Kavo",
+    "WriteFile", "ReadFile", "AppendFile", "IsFile", "IsFolder",
+    "MakeFolder", "DelFolder", "ListFiles", "GetCustomAsset", "LoadAsset",
   ]);
 
   const unknownGlobals = [...globals].filter(g => !knownGlobals.has(g));
   if (unknownGlobals.length <= 20) {
     for (const g of unknownGlobals) {
       errors.push({
-        message: `Unbekannte globale Variable: '${g}' (möglicherweise Tippfehler)`,
+        message: `Unknown global variable: '${g}' (possibly a typo)`,
         severity: "warning",
       });
     }
@@ -451,7 +478,7 @@ export function validate(source: string): ValidationResult {
       functions: funcCount,
       locals: localCount,
       globals: [...globals],
-      features: [...features],
+      features: [...detectedFeatures],
     },
   };
 }

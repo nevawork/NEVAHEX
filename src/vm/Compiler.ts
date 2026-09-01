@@ -92,12 +92,13 @@ function allocLocal(ctx: CompileContext, name: string): number {
   return slot;
 }
 
-function pushScope(ctx: CompileContext): Map<string, number> {
-  return new Map(ctx.locals);
+function pushScope(ctx: CompileContext): { locals: Map<string, number>; nextSlot: number } {
+  return { locals: new Map(ctx.locals), nextSlot: ctx.nextSlot };
 }
 
-function popScope(ctx: CompileContext, prev: Map<string, number>): void {
-  ctx.locals = prev;
+function popScope(ctx: CompileContext, prev: { locals: Map<string, number>; nextSlot: number }): void {
+  ctx.locals = prev.locals;
+  ctx.nextSlot = prev.nextSlot;
 }
 
 function pushLoop(ctx: CompileContext): LoopContext {
@@ -1042,6 +1043,8 @@ function compileStatement(ctx: CompileContext, stmt: Statement | LastStatement):
     case "ExportTypeStatement":
     case "TypeFunctionStatement":
     case "ExportTypeFunctionStatement":
+    case "GotoStatement":
+    case "LabelStatement":
       break;
 
     default:

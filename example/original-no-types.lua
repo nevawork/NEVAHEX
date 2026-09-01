@@ -1,4 +1,4 @@
--- Example Roblox Luau script for NEVAHEX demonstration
+-- Example Roblox Luau script for NEVAHEX demonstration (without type annotations for testing)
 -- This script demonstrates various Luau features that NEVAHEX can protect
 
 local Players = game:GetService("Players")
@@ -10,26 +10,11 @@ local TweenInfo = TweenInfo
 local Vector3 = Vector3
 local Color3 = Color3
 
--- Type annotations for better IDE support
-type PlayerData = {
-	name: string,
-	level: number,
-	xp: number,
-	inventory: { [number]: string },
-}
-
-type WeaponConfig = {
-	name: string,
-	damage: number,
-	fireRate: number,
-	range: number,
-}
-
 -- Module pattern for clean code organization
 local PlayerManager = {}
 PlayerManager.__index = PlayerManager
 
-function PlayerManager.new(player: Player): PlayerData
+function PlayerManager.new(player)
 	local self = setmetatable({}, PlayerManager)
 	self.player = player
 	self.data = {
@@ -37,11 +22,11 @@ function PlayerManager.new(player: Player): PlayerData
 		level = 1,
 		xp = 0,
 		inventory = {"Starter Sword", "Health Potion"},
-	} :: PlayerData
+	}
 	return self
 end
 
-function PlayerManager:addXP(amount: number)
+function PlayerManager:addXP(amount)
 	self.data.xp += amount
 	local xpNeeded = self.data.level * 100
 	if self.data.xp >= xpNeeded then
@@ -51,7 +36,7 @@ function PlayerManager:addXP(amount: number)
 	end
 end
 
-function PlayerManager:getData(): PlayerData
+function PlayerManager:getData()
 	return self.data
 end
 
@@ -62,37 +47,37 @@ local Weapons = {
 		damage = 10,
 		fireRate = 1.0,
 		range = 10,
-	} :: WeaponConfig,
+	},
 	["Iron Sword"] = {
 		name = "Iron Sword",
 		damage = 25,
 		fireRate = 1.2,
 		range = 12,
-	} :: WeaponConfig,
+	},
 	["Diamond Blade"] = {
 		name = "Diamond Blade",
 		damage = 50,
 		fireRate = 1.5,
 		range = 15,
-	} :: WeaponConfig,
+	},
 }
 
 -- Combat system
 local CombatSystem = {}
 CombatSystem.__index = CombatSystem
 
-function CombatSystem.new(weaponName: string)
+function CombatSystem.new(weaponName)
 	local self = setmetatable({}, CombatSystem)
 	self.weapon = Weapons[weaponName] or Weapons["Starter Sword"]
 	self.lastAttack = 0
 	return self
 end
 
-function CombatSystem:canAttack(): boolean
+function CombatSystem:canAttack()
 	return tick() - self.lastAttack >= self.weapon.fireRate
 end
 
-function CombatSystem:attack(target: Model): boolean
+function CombatSystem:attack(target)
 	if not self:canAttack() then return false end
 	
 	local humanoid = target:FindFirstChild("Humanoid")
@@ -127,18 +112,18 @@ Events.__index = Events
 
 function Events.new()
 	local self = setmetatable({}, Events)
-	self.listeners = {} :: {[string]: {Function}}
+	self.listeners = {}
 	return self
 end
 
-function Events:on(event: string, callback: () -> ())
+function Events:on(event, callback)
 	if not self.listeners[event] then
 		self.listeners[event] = {}
 	end
 	table.insert(self.listeners[event], callback)
 end
 
-function Events:fire(event: string, ...)
+function Events:fire(event, ...)
 	if self.listeners[event] then
 		for _, callback in ipairs(self.listeners[event]) do
 			task.spawn(callback, ...)
@@ -149,25 +134,25 @@ end
 -- UI Animation helper
 local UIAnimations = {}
 
-function UIAnimations.tween(guiObject: GuiObject, properties: {[string]: any}, duration: number, easingStyle: Enum.EasingStyle?, easingDirection: Enum.EasingDirection?): Tween
+function UIAnimations.tween(guiObject, properties, duration, easingStyle, easingDirection)
 	local tweenInfo = TweenInfo.new(duration, easingStyle or Enum.EasingStyle.Quad, easingDirection or Enum.EasingDirection.Out)
 	local tween = TweenService:Create(guiObject, tweenInfo, properties)
 	tween:Play()
 	return tween
 end
 
-function UIAnimations.fadeIn(guiObject: GuiObject, duration: number?): Tween
+function UIAnimations.fadeIn(guiObject, duration)
 	return UIAnimations.tween(guiObject, {BackgroundTransparency = 0, TextTransparency = 0}, duration or 0.3)
 end
 
-function UIAnimations.fadeOut(guiObject: GuiObject, duration: number?): Tween
+function UIAnimations.fadeOut(guiObject, duration)
 	return UIAnimations.tween(guiObject, {BackgroundTransparency = 1, TextTransparency = 1}, duration or 0.3)
 end
 
 -- Data persistence helper
 local DataStore = {}
 
-function DataStore.save(key: string, data: any): boolean
+function DataStore.save(key, data)
 	local success, result = pcall(function()
 		-- In real implementation, use DataStoreService
 		local dataStore = game:GetService("DataStoreService"):GetDataStore("PlayerData")
@@ -180,7 +165,7 @@ function DataStore.save(key: string, data: any): boolean
 	return true
 end
 
-function DataStore.load(key: string): any?
+function DataStore.load(key)
 	local success, result = pcall(function()
 		local dataStore = game:GetService("DataStoreService"):GetDataStore("PlayerData")
 		return dataStore:GetAsync(key)

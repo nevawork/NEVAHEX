@@ -108,6 +108,7 @@ export function generateBootstrap(config: BootstrapConfig): string {
   const nRaw = N(), nDec = N();
 
   const nOk = N(), nFn = N(), nState = N(), nResult = N(), nZeroExp = N();
+  const nEnvName = N();
 
   const junkFnNames = [N(), N(), N(), N(), N()];
   const junkVarNames = [N(), N(), N(), N(), N(), N(), N(), N()];
@@ -175,6 +176,55 @@ export function generateBootstrap(config: BootstrapConfig): string {
     fragments.push({ code: `local ${nLoad}=type(loadstring)=="function" and loadstring or load`, layer: 0 });
     fragments.push({ code: `local ${nPack}=function(v) local a,b,c2,d=math.floor(v/16777216)%256,math.floor(v/65536)%256,math.floor(v/256)%256,v%256;return ${nChar}(a,b,c2,d) end`, layer: 0 });
     fragments.push({ code: `if type(bit32)=="table" then else local _B={bxor=function(a,b) local r=0;for i=0,31 do local x,y=((a//(2^i))%2),((b//(2^i))%2);if (x+y)%2==1 then r=r+(2^i) end end;return r end,band=function(a,b) local r=0;for i=0,31 do if ((a//(2^i))%2==1) and ((b//(2^i))%2==1) then r=r+(2^i) end end;return r end,bor=function(a,b) local r=0;for i=0,31 do if ((a//(2^i))%2==1) or ((b//(2^i))%2==1) then r=r+(2^i) end end;return r end,lrotate=function(a,d) d=d%32;if d<0 then d=d+32 end;return ((a<<d)|(a>>(32-d)))&0xFFFFFFFF end,lshift=function(a,d) return (a<<d)&0xFFFFFFFF end,rshift=function(a,d) return a>>d end};bit32=_B end;local ${nBxor}=bit32.bxor;local ${nBand}=bit32.band`, layer: 0 });
+}
+  
+  // Create environment table with Roblox globals
+  {
+    const coreGlobals = [
+      "print","warn","error","assert","type","typeof","tostring","tonumber",
+      "pcall","xpcall","select","unpack","pairs","ipairs","next",
+      "rawget","rawset","rawequal","rawlen","setmetatable","getmetatable",
+      "collectgarbage","dofile","gcinfo",
+      "string","table","math","bit32","coroutine","os","debug","utf8","buffer",
+      "game","workspace","script","Instance","Enum",
+      "Vector3","Vector2","CFrame","Color3","BrickColor",
+      "UDim","UDim2","Ray","Region3","Rect","TweenInfo",
+      "NumberSequence","ColorSequence","NumberRange",
+      "NumberSequenceKeypoint","ColorSequenceKeypoint",
+      "PhysicalProperties","Axes","Faces","PathWaypoint",
+      "Random","DateTime","RaycastParams","OverlapParams",
+      "Font","FloatCurveKey","RotationCurveKey",
+      "tick","time","wait","task","spawn","delay",
+      "require","loadstring","load","getfenv","setfenv","newproxy",
+      "_G","shared","settings","stats","UserSettings","version",
+    ];
+    const executorGlobals = [
+      "getgenv","getrenv","getsenv","getrawmetatable","setrawmetatable",
+      "hookfunction","hookfunc","hookmetamethod","newcclosure",
+      "clonefunction","cloneref","compareinstances",
+      "iscclosure","islclosure","isexecutorclosure","checkclosure","isourclosure",
+      "checkcaller",
+      "getconnections","firesignal","fireclickdetector","fireproximityprompt","firetouchinterest",
+      "getgc","getinstances","getnilinstances","getscripts","getrunningscripts",
+      "getloadedmodules","getcallingscript","getactors",
+      "getscriptbytecode","dumpstring","getscripthash","getscriptclosure","decompile",
+      "readfile","writefile","appendfile","loadfile","listfiles",
+      "isfile","isfolder","makefolder","delfolder","delfile",
+      "setclipboard","toclipboard","getclipboard","setrbxclipboard",
+      "queue_on_teleport","queueonteleport",
+      "setthreadidentity","getthreadidentity",
+      "rconsoleclear","rconsolecreate","rconsoledestroy",
+      "rconsoleinput","rconsoleprint","rconsolesettitle","rconsolename",
+      "consoleinput","consoleprint","consolesettitle",
+      "run_on_actor","runonactor",
+      "getstack",
+    ];
+    const allGlobals = [...coreGlobals, ...executorGlobals];
+    const envEntries = allGlobals.map(g => `${g}=${g}`).join(",");
+    fragments.push({
+      code: `local ${nEnvName}=setmetatable({${envEntries}},{__index=function(_,k) local ok,v=pcall(function() return _G[k] end);if ok then return v end;return nil end})`,
+      layer: 0
+    });
   }
 
   const nDbgRef = N();
@@ -408,7 +458,7 @@ export function generateBootstrap(config: BootstrapConfig): string {
 
   cases.push({ id: stExec, code: [
     `${nAssert}(${nOk} and ${nFn} and ${nType}(${nFn})=="function","NEVAHEX Protection v1")`,
-    `${nResult}=${nFn}(...)`,
+    `${nResult}=${nFn}(nil,nil,nil,nil,nil,nil,nil,${nEnvName})`,
 
     `for _0i=1,256 do ${nSbox}[_0i]=0 end`,
     `for _0i=1,${nKeyLen} do ${nKey}[_0i]=0 end`,

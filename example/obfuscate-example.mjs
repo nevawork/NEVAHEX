@@ -1,11 +1,11 @@
 import { readFileSync, writeFileSync } from "fs";
-import { lex } from "../dist/lexer/Lexer.js";
-import { parse } from "../dist/parser/Parser.js";
-import { obfuscate } from "../dist/obfuscator/Obfuscator.js";
-import { encodeStrings } from "../dist/obfuscator/StringEncoder.js";
-import { scrambleControlFlow } from "../dist/obfuscator/ControlFlowScrambler.js";
-import { regCompile } from "../dist/vm/RegCompiler.js";
-import { generateRegVM } from "../dist/vm/reg-vm-gen.js";
+import { lex } from "../dist/src/lexer/Lexer.js";
+import { parse } from "../dist/src/parser/Parser.js";
+import { obfuscate } from "../dist/src/obfuscator/Obfuscator.js";
+import { encodeStrings } from "../dist/src/obfuscator/StringEncoder.js";
+import { scrambleControlFlow } from "../dist/src/obfuscator/ControlFlowScrambler.js";
+import { regCompile } from "../dist/src/vm/RegCompiler.js";
+import { generateRegVM } from "../dist/src/vm/reg-vm-gen.js";
 
 const source = readFileSync("example/original.lua", "utf-8");
 

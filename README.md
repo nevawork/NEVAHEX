@@ -9,8 +9,6 @@ NEVAHEX is a from-scratch Lua and Luau obfuscator supporting **Lua 5.1, 5.2, 5.3
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](./LICENSE)
 [![Targets](https://img.shields.io/badge/Targets-Lua%205.1--5.4%20%7C%20Luau-7c3aed?style=flat-square)](#supported-targets)
 
-> NEVAHEX is derived from [Clyde-Luau-Obfuscator](https://github.com/sfr-development/Clyde-Luau-Obfuscator) by sfr-development (MIT). See [THIRD_PARTY.md](./THIRD_PARTY.md).
-
 ---
 
 ## Supported Targets
@@ -209,4 +207,4 @@ The test suite covers the lexer, parser, both VMs, closure/upvalue semantics, va
 
 ## License
 
-MIT. See [LICENSE](./LICENSE). Derived from Clyde-Luau-Obfuscator (also MIT). See [THIRD_PARTY.md](./THIRD_PARTY.md).
+MIT. See [LICENSE](./LICENSE).

@@ -33,7 +33,7 @@
     "executor"
   ],
   "license": "MIT",
-  "author": "NEVAHEX contributors (originally derived from Clyde-Luau-Obfuscator by sfr-development)",
+  "author": "NEVAHEX contributors",
   "homepage": "https://nevahex.dev",
   "repository": {
     "type": "git",

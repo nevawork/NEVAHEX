@@ -6,6 +6,7 @@ export interface BootstrapConfig {
   checksum: number;
   chunkName?: string;
   rng: () => number;
+  envName?: string;
 }
 
 function longStringLevel(s: string): number {
@@ -108,7 +109,6 @@ export function generateBootstrap(config: BootstrapConfig): string {
   const nRaw = N(), nDec = N();
 
   const nOk = N(), nFn = N(), nState = N(), nResult = N(), nZeroExp = N();
-  const nEnvName = N();
 
   const junkFnNames = [N(), N(), N(), N(), N()];
   const junkVarNames = [N(), N(), N(), N(), N(), N(), N(), N()];
@@ -180,6 +180,7 @@ export function generateBootstrap(config: BootstrapConfig): string {
   
   // Create environment table with Roblox globals
   {
+    const envName = config.envName || N();
     const coreGlobals = [
       "print","warn","error","assert","type","typeof","tostring","tonumber",
       "pcall","xpcall","select","unpack","pairs","ipairs","next",
@@ -222,7 +223,7 @@ export function generateBootstrap(config: BootstrapConfig): string {
     const allGlobals = [...coreGlobals, ...executorGlobals];
     const envEntries = allGlobals.map(g => `${g}=${g}`).join(",");
     fragments.push({
-      code: `local ${nEnvName}=setmetatable({${envEntries}},{__index=function(_,k) local ok,v=pcall(function() return _G[k] end);if ok then return v end;return nil end})`,
+      code: `local ${envName}=setmetatable({${envEntries}},{__index=function(_,k) local ok,v=pcall(function() return _G[k] end);if ok then return v end;return nil end})`,
       layer: 0
     });
   }
@@ -458,7 +459,7 @@ export function generateBootstrap(config: BootstrapConfig): string {
 
   cases.push({ id: stExec, code: [
     `${nAssert}(${nOk} and ${nFn} and ${nType}(${nFn})=="function","NEVAHEX Protection v1")`,
-    `${nResult}=${nFn}(nil,nil,nil,nil,nil,nil,nil,${nEnvName})`,
+    `${nResult}=${nFn}()`,
 
     `for _0i=1,256 do ${nSbox}[_0i]=0 end`,
     `for _0i=1,${nKeyLen} do ${nKey}[_0i]=0 end`,

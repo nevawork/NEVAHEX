@@ -151,8 +151,8 @@ function generateRegCompatPolyfill(target: Target): string {
   lines.push(`local ${tg}="${target}"`);
   lines.push(`local ${execN}="unknown"`);
   lines.push(`if type(game)~="nil" and typeof and typeof(game)~="nil" then ${execN}="roblox" end`);
-  lines.push(`if type(syn)~="table" then ${execN}="synapse" end`);
-  lines.push(`if type(fluxus)~="table" then ${execN}="fluxus" end`);
+  lines.push(`if type(syn)=="table" then ${execN}="synapse" end`);
+  lines.push(`if type(fluxus)=="table" then ${execN}="fluxus" end`);
   lines.push(`if type(identifyexecutor)=="function" then local _n=identifyexecutor();if type(_n)=="string" then ${execN}=_n end end`);
 
   const bit32n = N("b32");
@@ -3750,6 +3750,7 @@ export function generateRegVM(chunk: RegBytecodeChunk, options: RegVMGenOptions 
       checksum,
       chunkName: "NEVAHEX",
       rng,
+      envName: names.env,
     });
     console.log(`[RegVM] Blob: final output = ${output.length} chars`);
   }
